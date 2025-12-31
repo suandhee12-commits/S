@@ -15,17 +15,16 @@
     <div id="loginOverlay" class="login-overlay hidden" aria-hidden="true">
       <input id="loginId" class="login-input login-id" type="text" autocomplete="username" spellcheck="false" />
       <input id="loginPw" class="login-input login-pw" type="password" autocomplete="current-password" />
-
       <button id="btnPass" class="hotspot login-btn-pass" aria-label="통과"></button>
       <button id="btnEnter" class="hotspot login-btn-enter" aria-label="ENTER"></button>
     </div>
 
-    <!-- ✅ 채팅 화면(04_chat) 전용 오버레이 -->
+    <!-- 04_chat 화면 전용 오버레이 -->
     <div id="chatOverlay" class="chat-overlay hidden" aria-hidden="true">
-      <!-- 대화가 쌓이는 영역(흰 박스 위) -->
-      <div id="chatLog" class="chat-log" role="log" aria-live="polite"></div>
+      <!-- 왼쪽 아래 큰 흰 박스 안에만 채팅 표시 -->
+      <div id="chatLog" class="chat-log" aria-live="polite"></div>
 
-      <!-- 입력 영역(아래 작은 흰 박스 + 보내기 버튼) -->
+      <!-- 아래 입력 박스 + 보내기 버튼 -->
       <input id="chatInput" class="chat-input" type="text" spellcheck="false" />
       <button id="chatSend" class="hotspot chat-send" aria-label="보내기"></button>
     </div>
