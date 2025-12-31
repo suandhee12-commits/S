@@ -117,3 +117,19 @@ body {
 .dev-nav button:hover {
   background: rgba(255,255,255,0.16);
 }
+
+/* 레이어 순서 강제 */
+.bg { z-index: 0; }
+.login-overlay { z-index: 10; }
+
+/* 입력칸이 최상단 */
+.login-input { 
+  z-index: 30;
+  pointer-events: auto;
+}
+
+/* 버튼은 입력칸보다 아래 */
+.login-btn-pass,
+.login-btn-enter {
+  z-index: 20;
+}
