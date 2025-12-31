@@ -45,7 +45,7 @@ body {
   inset: 0;
   z-index: 10;
 
-  /* ✅ 오버레이 자체는 이벤트를 막고 */
+  /* ✅ 오버레이 자체는 이벤트 막고 */
   pointer-events: none;
 }
 
@@ -56,19 +56,19 @@ body {
   pointer-events: auto;
 }
 
-/* 입력칸: “이미지의 흰 박스 안에 글자만” 올라가게 */
+/* 입력칸: 이미지 흰 박스 위에 글자만 올라가게 */
 .login-input {
   position: absolute;
   border: none;
   outline: none;
 
-  background: transparent;          /* ✅ 박스는 이미지가 이미 흰색 */
+  background: transparent;
   color: #2a1a00;
   caret-color: #2a1a00;
 
   font-size: clamp(12px, 1.6vw, 18px);
   line-height: 1;
-  padding: 0 0.6em;                 /* 좌우 여백만 살짝 */
+  padding: 0 0.6em;
   border-radius: 0;
 
   z-index: 30;
