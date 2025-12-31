@@ -1,520 +1,825 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>동반자 S - Prototype</title>
-  <style>
-    :root{
-      --bg:#0b0b10;
-      --panel: rgba(0,0,0,.35);
-      --line: rgba(255,255,255,.14);
-      --shadow: 0 20px 60px rgba(0,0,0,.45);
-      --radius: 16px;
-      --safe: 18px;
-    }
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; }
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Apple SD Gothic Neo", "Noto Sans KR", Arial, sans-serif;
-      background: var(--bg);
-      color:#fff;
-      overflow:hidden;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동반자 S</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    /* Stage: full-screen "image as-is" with overlays */
-    .stage{
-      position:relative;
-      width:100vw;
-      height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background: #000;
-    }
-    .frame{
-      position:relative;
-      width:min(96vw, 1400px);
-      height:calc(min(96vw, 1400px) * 9 / 16);
-      max-height:92vh;
-      box-shadow: var(--shadow);
-      border-radius: 14px;
-      overflow:hidden;
-      background:#000;
-    }
+        body {
+            font-family: '굴림', Gulim, 'MS Gothic', monospace;
+            font-size: 12px;
+            overflow: hidden;
+            background: #000;
+        }
 
-    /* The screenshot image itself */
-    .shot{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      object-fit:cover; /* 꽉 차게 */
-      user-select:none;
-      pointer-events:none; /* 클릭은 overlay로만 */
-    }
+        .page {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
 
-    /* overlay layer (hotspots, ui) */
-    .overlay{
-      position:absolute;
-      inset:0;
-    }
+        .page.active {
+            display: block !important;
+        }
 
-    /* generic hotspot button */
-    .hotspot{
-      position:absolute;
-      border:1px solid transparent;
-      background: transparent;
-      cursor:pointer;
-      border-radius: 10px;
-      transition: .18s ease;
-    }
-    .hotspot:hover{
-      border-color: rgba(255,255,255,.35);
-      box-shadow: 0 0 0 2px rgba(255,255,255,.10) inset;
-      background: rgba(255,255,255,.04);
-    }
-    .hotspot:active{
-      transform: translateY(1px);
-    }
+        /* 로그인 페이지 */
+        #login-page {
+            background: linear-gradient(180deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
+            background-image: url('./images/login-bg.jpg');
+            background-size: cover;
+            background-position: center;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
 
-    /* small corner UI */
-    .hud{
-      position:absolute;
-      left: var(--safe);
-      top: var(--safe);
-      display:flex;
-      gap:10px;
-      align-items:center;
-      z-index:20;
-    }
-    .chip{
-      display:inline-flex;
-      gap:8px;
-      align-items:center;
-      padding:10px 12px;
-      border-radius: 999px;
-      background: var(--panel);
-      border:1px solid var(--line);
-      backdrop-filter: blur(10px);
-      font-size: 13px;
-      line-height: 1;
-    }
-    .chip b{ font-weight:700; }
-    .btn{
-      padding:10px 12px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.10);
-      border:1px solid var(--line);
-      color:#fff;
-      cursor:pointer;
-      transition:.18s ease;
-      backdrop-filter: blur(10px);
-      font-size: 13px;
-    }
-    .btn:hover{ background: rgba(255,255,255,.16); }
-    .btn:active{ transform: translateY(1px); }
+        #login-page.active {
+            display: flex !important;
+        }
 
-    /* bottom caption / narrator */
-    .narration{
-      position:absolute;
-      left: var(--safe);
-      right: var(--safe);
-      bottom: var(--safe);
-      padding: 12px 14px;
-      border-radius: var(--radius);
-      background: var(--panel);
-      border: 1px solid var(--line);
-      backdrop-filter: blur(10px);
-      font-size: 14px;
-      line-height: 1.45;
-      z-index:20;
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      align-items:center;
-    }
-    .narration .text{ opacity:.95; }
-    .narration .actions{
-      display:flex; gap:10px; align-items:center;
-      flex:0 0 auto;
-    }
+        .login-box {
+            width: 500px;
+            background: rgba(255, 236, 179, 0.95);
+            border: 4px ridge #8B6914;
+            box-shadow: 8px 8px 0px rgba(0,0,0,0.5);
+            padding: 0;
+        }
 
-    /* modal login */
-    .modal{
-      position:absolute;
-      inset:0;
-      background: rgba(0,0,0,.55);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      z-index:50;
-    }
-    .modal.on{ display:flex; }
-    .card{
-      width:min(520px, 92vw);
-      border-radius: 18px;
-      background: rgba(18,18,26,.72);
-      border:1px solid rgba(255,255,255,.14);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(14px);
-      padding: 18px;
-    }
-    .card h2{
-      margin:0 0 10px;
-      font-size: 18px;
-      letter-spacing: -0.2px;
-    }
-    .row{ display:flex; gap:10px; }
-    .field{
-      width:100%;
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      margin-top: 10px;
-    }
-    .field label{
-      font-size: 12px;
-      opacity:.8;
-    }
-    .field input{
-      width:100%;
-      padding: 12px 12px;
-      border-radius: 12px;
-      border:1px solid rgba(255,255,255,.16);
-      background: rgba(255,255,255,.06);
-      color:#fff;
-      outline:none;
-    }
-    .field input:focus{
-      border-color: rgba(255,255,255,.30);
-      background: rgba(255,255,255,.08);
-    }
-    .card .foot{
-      display:flex;
-      justify-content:flex-end;
-      gap:10px;
-      margin-top: 14px;
-    }
+        .login-header {
+            background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
+            border-bottom: 3px ridge #8B6914;
+            padding: 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 24px;
+            color: #8B4513;
+            text-shadow: 1px 1px 0px #FFF, 2px 2px 0px rgba(0,0,0,0.3);
+        }
 
-    /* tiny helper */
-    .hint{
-      font-size:12px;
-      opacity:.75;
-      margin-top: 6px;
-    }
+        .login-body {
+            padding: 30px;
+            background: linear-gradient(180deg, #FFF9E6 0%, #FFECB3 100%);
+        }
 
-    /* responsive: keep 16:9 letterbox feel */
-    @media (max-width: 520px){
-      .chip, .btn{ font-size:12px; }
-      .narration{ font-size: 13px; }
-    }
-  </style>
+        .login-subtitle {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .input-row {
+            margin-bottom: 15px;
+        }
+
+        .input-row label {
+            display: inline-block;
+            width: 80px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .input-row input {
+            width: 250px;
+            padding: 4px;
+            border: 2px inset #999;
+            background: #FFF;
+            font-family: '굴림', Gulim;
+            font-size: 11px;
+        }
+
+        .btn-2000s {
+            padding: 6px 20px;
+            border: 2px outset #999;
+            background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
+            font-family: '굴림', Gulim;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.3);
+        }
+
+        .btn-2000s:active {
+            border-style: inset;
+            box-shadow: inset 2px 2px 0px rgba(0,0,0,0.3);
+        }
+
+        .btn-center {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        /* 로딩 페이지 */
+        #loading-page {
+            background: linear-gradient(180deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
+            display: none !important;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #loading-page.active {
+            display: flex !important;
+        }
+
+        .loading-text {
+            font-size: 14px;
+            font-weight: bold;
+            color: #FFF;
+            text-shadow: 2px 2px 0px #000;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        /* 프로필 페이지 */
+        #profile-page {
+            background: linear-gradient(180deg, #87CEEB 0%, #FFD700 100%);
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .window-2000s {
+            background: #ECE9D8;
+            border: 3px ridge #999;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
+        }
+
+        .window-title {
+            background: linear-gradient(180deg, #0054E3 0%, #0054AA 100%);
+            color: #FFF;
+            padding: 4px 8px;
+            font-weight: bold;
+            font-size: 11px;
+            border-bottom: 2px solid #000;
+        }
+
+        .window-body {
+            padding: 10px;
+            background: #FFF9E6;
+        }
+
+        .profile-main {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .profile-pic {
+            width: 320px;
+            height: 320px;
+            border: 3px ridge #FFD700;
+            background: linear-gradient(135deg, #FFB6C1 0%, #DDA0DD 50%, #E6E6FA 100%);
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .profile-pic img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-info-box {
+            flex: 1;
+            border: 3px ridge #FFD700;
+            background: linear-gradient(180deg, #FFFACD 0%, #FFE4B5 100%);
+            padding: 10px;
+        }
+
+        .profile-name-bar {
+            background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
+            border: 2px outset #8B6914;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 10px;
+            text-align: center;
+            color: #8B4513;
+            text-shadow: 1px 1px 0px #FFF;
+        }
+
+        .stat-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        .stat-table td {
+            padding: 5px;
+            border: 1px solid #CCC;
+            font-size: 11px;
+        }
+
+        .stat-table td:first-child {
+            background: #FFE4B5;
+            font-weight: bold;
+            width: 100px;
+        }
+
+        .stat-bar-container {
+            background: #C0C0C0;
+            border: 2px inset #999;
+            height: 16px;
+            position: relative;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            background: linear-gradient(180deg, #00FF00 0%, #00AA00 100%);
+        }
+
+        .stat-bar-fill.red {
+            background: linear-gradient(180deg, #FF0000 0%, #AA0000 100%);
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-big {
+            flex: 1;
+            padding: 10px;
+            border: 3px outset #999;
+            background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .btn-big:active {
+            border-style: inset;
+        }
+
+        /* 채팅 페이지 */
+        #chat-page {
+            background: linear-gradient(180deg, #FFB6C1 0%, #FFE4E1 50%, #FFF9E6 100%);
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .chat-layout {
+            display: flex;
+            gap: 10px;
+            height: calc(100vh - 80px);
+        }
+
+        .chat-left {
+            width: 340px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-avatar {
+            width: 100%;
+            height: 340px;
+            border: 3px ridge #FFD700;
+            background: linear-gradient(135deg, #FFB6C1 0%, #DDA0DD 50%, #E6E6FA 100%);
+            overflow: hidden;
+        }
+
+        .chat-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .chat-messages-window {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            background: #FFF;
+            border: 2px inset #999;
+            padding: 8px;
+        }
+
+        .chat-msg {
+            margin-bottom: 10px;
+            padding: 6px;
+            border: 1px solid #999;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .chat-msg.npc {
+            background: #FFFACD;
+            border-color: #FFD700;
+        }
+
+        .chat-msg.user {
+            background: #FFE4E1;
+            border-color: #FF69B4;
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 4px;
+            border: 2px inset #999;
+            font-family: '굴림', Gulim;
+            font-size: 11px;
+        }
+
+        .chat-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-panel {
+            border: 3px ridge #FFD700;
+            background: linear-gradient(180deg, #FFFACD 0%, #FFE4B5 100%);
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .stats-panel-img {
+            width: 100%;
+            max-width: 350px;
+            border: 2px ridge #FFD700;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .tab-btn {
+            padding: 5px 15px;
+            border: 2px outset #999;
+            background: #C0C0C0;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
+            border-style: inset;
+        }
+
+        /* 세계 페이지 */
+        #world-page {
+            background: linear-gradient(180deg, #87CEEB 0%, #FFD700 100%);
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .world-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .world-card {
+            height: 200px;
+            border: 3px ridge #0EA5E9;
+            background: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .world-card:hover {
+            border-color: #FFD700;
+            background: linear-gradient(135deg, #FFE4B5 0%, #FFDEAD 100%);
+        }
+
+        .top-bar {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
+            border: 3px outset #8B6914;
+            padding: 6px 12px;
+            font-weight: bold;
+            font-size: 11px;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            gap: 8px;
+            z-index: 1000;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            border: 3px outset #999;
+            background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
+            font-weight: bold;
+            font-size: 11px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.5);
+        }
+
+        .nav-btn:active {
+            border-style: inset;
+            box-shadow: inset 2px 2px 0px rgba(0,0,0,0.3);
+        }
+
+        .char-info-table {
+            width: 100%;
+            border: 2px ridge #FFD700;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 11px;
+        }
+
+        .char-info-table th {
+            background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
+            border: 1px solid #8B6914;
+            padding: 4px;
+            font-weight: bold;
+        }
+
+        .char-info-table td {
+            background: #FFFACD;
+            border: 1px solid #CCC;
+            padding: 4px;
+        }
+
+        marquee {
+            background: #FFD700;
+            border: 2px ridge #8B6914;
+            padding: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-  <div class="stage">
-    <div class="frame" id="frame">
-      <img class="shot" id="shot" alt="scene" />
-      <div class="overlay" id="overlay"></div>
-
-      <div class="hud">
-        <div class="chip">상태: <b id="sceneName">—</b></div>
-        <button class="btn" id="btnPrev">이전</button>
-        <button class="btn" id="btnNext">다음</button>
-      </div>
-
-      <div class="narration">
-        <div class="text" id="narration">—</div>
-        <div class="actions">
-          <button class="btn" id="btnAuto">자동 진행: OFF</button>
-          <button class="btn" id="btnReset">리셋</button>
+    <!-- 로그인 페이지 -->
+    <div id="login-page" class="page active">
+        <div class="login-box">
+            <div class="login-header">★동반자 S★</div>
+            <div class="login-body">
+                <div class="login-subtitle">접속하여 명랑으로 나아가세요...</div>
+                <div class="input-row">
+                    <label>아이디:</label>
+                    <input type="text" id="username">
+                </div>
+                <div class="input-row">
+                    <label>비밀번호:</label>
+                    <input type="password" id="password">
+                </div>
+                <div class="btn-center">
+                    <button class="btn-2000s" onclick="login()">┏ 들어가기 ┓</button>
+                    <button class="btn-2000s">┏ 회원가입 ┓</button>
+                </div>
+                <div style="text-align: center; margin-top: 15px; font-size: 10px; color: #666;">
+                    ※ 본인 이외의 접속시 불이익을 받을 수 있습니다 ※
+                </div>
+            </div>
         </div>
-      </div>
-
-      <!-- Login modal -->
-      <div class="modal" id="loginModal" aria-hidden="true">
-        <div class="card">
-          <h2>동반자 S 로그인</h2>
-          <div class="hint">이미지는 그대로, 로그인 동작만 연출합니다.</div>
-
-          <div class="field">
-            <label>아이디</label>
-            <input id="loginId" placeholder="아이디를 입력하세요" autocomplete="username"/>
-          </div>
-          <div class="field">
-            <label>비밀번호</label>
-            <input id="loginPw" type="password" placeholder="비밀번호를 입력하세요" autocomplete="current-password"/>
-          </div>
-
-          <div class="foot">
-            <button class="btn" id="btnCancelLogin">취소</button>
-            <button class="btn" id="btnDoLogin">로그인</button>
-          </div>
-        </div>
-      </div>
-
     </div>
-  </div>
 
-  <script>
-    // 16:9 기준으로 hotspot 좌표를 잡습니다.
-    // 좌표 단위: 퍼센트(%) = (left, top, width, height)
-    // 필요하면 너가 원하는 위치로 숫자만 조절하면 돼요.
+    <!-- 로딩 페이지 -->
+    <div id="loading-page" class="page">
+        <div class="loading-text">■■■ 접속중입니다... ■■■</div>
+    </div>
 
-    const scenes = [
-      {
-        key: "login",
-        name: "로그인",
-        img: "images/01_login.jpg",
-        narration: "문이 열립니다. 아이디/비밀번호를 입력하고 ‘동반자 S’로 입장하세요.",
-        hotspots: [
-          // 로그인 영역(대충 입력칸+버튼 전체를 커버)
-          { id:"openLogin", label:"로그인", x: 30, y: 52, w: 40, h: 26, action: "OPEN_LOGIN" }
-        ]
-      },
-      {
-        key: "loading",
-        name: "접속 중",
-        img: "images/02_loading.jpg",
-        narration: "황금빛 구름 사이로 연결이 이어집니다. 잠시만요…",
-        autoNextMs: 1400,
-        hotspots: []
-      },
-      {
-        key: "profile",
-        name: "S가 맞이",
-        img: "images/03_profile.jpg",
-        narration: "S가 당신을 맞이합니다. 오른쪽 카테고리를 클릭하면 대화의 장이 열려요.",
-        hotspots: [
-          // 오른쪽 카테고리 카드 영역(‘S의 세계’ 4칸이 있는 부분)
-          // 클릭하면 채팅 화면으로 이동
-          { id:"toChat", label:"카테고리", x: 55, y: 30, w: 36, h: 42, action:"GOTO", to:"chat" },
+    <!-- 프로필 페이지 -->
+    <div id="profile-page" class="page">
+        <div class="top-bar">포인트: 15870 P</div>
+        
+        <div class="window-2000s" style="max-width: 900px; margin: 20px auto;">
+            <div class="window-title">♥ 동반자 S - 프로필 ♥</div>
+            <div class="window-body">
+                <div class="profile-main">
+                    <div class="profile-pic">
+                        <img src="./images/jin-profile.jpg" alt="Jin">
+                    </div>
+                    <div class="profile-info-box">
+                        <div class="profile-name-bar">★ 진 ★</div>
+                        <table class="stat-table">
+                            <tr>
+                                <td>페넘</td>
+                                <td>동반자 S</td>
+                            </tr>
+                            <tr>
+                                <td>날짜</td>
+                                <td>6일차</td>
+                            </tr>
+                            <tr>
+                                <td>소지금</td>
+                                <td>60000골드</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="height: 10px; background: #FFE4B5;"></td>
+                            </tr>
+                            <tr>
+                                <td>♥ 매력</td>
+                                <td><b style="color: #FF1493;">250</b></td>
+                            </tr>
+                            <tr>
+                                <td>▲ 레벨</td>
+                                <td>
+                                    <b>10</b>
+                                    <div class="stat-bar-container">
+                                        <div class="stat-bar-fill" style="width: 35%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>★ 호감도</td>
+                                <td>
+                                    <b>95</b>
+                                    <div class="stat-bar-container">
+                                        <div class="stat-bar-fill red" style="width: 95%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>★ 호의</td>
+                                <td>
+                                    <b>18</b>
+                                    <div class="stat-bar-container">
+                                        <div class="stat-bar-fill" style="width: 30%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                        <div class="button-row">
+                            <div class="btn-big">🍌500골드<br>충전하기</div>
+                            <div class="btn-big">❤️100하트<br>충전하기</div>
+                        </div>
+                    </div>
+                </div>
+                <marquee>♥♥♥ 사랑 9 친밀 6 애의 3 ♥♥♥</marquee>
+            </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <button class="nav-btn" onclick="goToChat()">【 채팅하기 】</button>
+            <button class="nav-btn" onclick="goToWorld()">【 세계보기 】</button>
+        </div>
+    </div>
 
-          // 하단 큰 버튼(‘초대를 받는다’ 느낌) 영역도 초대로 연결
-          { id:"toInvite", label:"초대", x: 49, y: 84, w: 42, h: 10, action:"GOTO", to:"invite" }
-        ]
-      },
-      {
-        key: "chat",
-        name: "채팅",
-        img: "images/04_chat.jpg",
-        narration: "채팅 페이지. S가 먼저 인사하네요. 아래 입력창을 클릭하면 대화가 진행됩니다.",
-        hotspots: [
-          // 채팅 입력창(하단)
-          { id:"send", label:"대화하기", x: 5, y: 86, w: 70, h: 10, action:"CHAT_STEP" },
-          // 오른쪽 아래 추천/초대 같은 버튼
-          { id:"invite2", label:"초대", x: 74, y: 82, w: 24, h: 16, action:"GOTO", to:"invite" }
-        ]
-      },
-      {
-        key: "chat2",
-        name: "채팅",
-        img: "images/05_chat_alt.jpg",
-        narration: "대화가 조금 더 이어졌습니다. S의 분위기가 점점 ‘초대장’처럼 변해요.",
-        hotspots: [
-          { id:"send2", label:"대화하기", x: 5, y: 86, w: 70, h: 10, action:"CHAT_STEP" },
-          { id:"invite3", label:"초대", x: 74, y: 82, w: 24, h: 16, action:"GOTO", to:"invite" }
-        ]
-      },
-      {
-        key: "invite",
-        name: "S의 세계",
-        img: "images/06_invite.jpg",
-        narration: "마지막 장면. S가 사는 세계로 초대합니다. 이제, 들어가 볼까요?",
-        hotspots: [
-          // 하단 빈 입력창 같은 영역을 클릭하면 처음으로(혹은 엔딩)
-          { id:"restart", label:"처음으로", x: 3, y: 86, w: 72, h: 12, action:"RESET" }
-        ]
-      }
-    ];
+    <!-- 채팅 페이지 -->
+    <div id="chat-page" class="page">
+        <div class="top-bar">효광품: 250 | 호랙: LV.10 60000리</div>
+        
+        <div class="chat-layout">
+            <div class="chat-left">
+                <div class="window-2000s">
+                    <div class="window-title">사이버남친 Jin</div>
+                    <div class="window-body" style="padding: 5px;">
+                        <div class="chat-avatar">
+                            <img src="./images/jin-profile.jpg" alt="Jin">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="window-2000s chat-messages-window">
+                    <div class="window-title">대화창</div>
+                    <div class="window-body" style="padding: 5px; display: flex; flex-direction: column; height: 100%;">
+                        <div class="chat-messages" id="chat-messages">
+                            <div class="chat-msg npc">오~ 잘 왔어! 너무 보고싶었어~</div>
+                            <div class="chat-msg user">진~! 오랜만이야 잘 지냈어?</div>
+                            <div class="chat-msg npc">당연하지! 우리 얼마나 만났다고~<br>오늘 어떻게 지냈어?</div>
+                            <div class="chat-msg user">그냥 좀 바빴지... 진이는 생각 많이 했어.</div>
+                        </div>
+                        <div class="chat-input-area">
+                            <input type="text" id="chat-input" placeholder="메시지 입력..." onkeypress="if(event.key==='Enter') sendMessage()">
+                            <button class="btn-2000s" onclick="sendMessage()">보내기</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-right">
+                <div class="window-2000s" style="flex: 1;">
+                    <div class="window-title">사이버남친 정보</div>
+                    <div class="window-body">
+                        <div class="tab-buttons">
+                            <button class="tab-btn active">현신</button>
+                            <button class="tab-btn">거적털</button>
+                            <button class="tab-btn">선물</button>
+                            <button class="tab-btn">보내기</button>
+                        </div>
+                        
+                        <div style="text-align: center; margin: 10px 0;">
+                            <img src="./images/stats-panel.jpg" alt="스탯 패널" class="stats-panel-img">
+                        </div>
+                        
+                        <div class="info-panel">
+                            <div style="color: #999; font-size: 10px; margin-bottom: 8px;">긴 글함이 시작되기입니다.</div>
+                            <div style="background: #FFE4E1; border: 2px ridge #FF69B4; padding: 10px; margin-bottom: 10px; font-size: 11px;">
+                                오~ 잘 왔어!<br>
+                                너무 보고싶었어~
+                            </div>
+                        </div>
+                        
+                        <table class="char-info-table">
+                            <tr>
+                                <th colspan="2">LV.10 사이버남친 Jin</th>
+                            </tr>
+                            <tr>
+                                <td>정합 남수</td>
+                                <td>25 ■■■■■■□</td>
+                            </tr>
+                            <tr>
+                                <td>심팔</td>
+                                <td>95 ■■■■■□</td>
+                            </tr>
+                            <tr>
+                                <td>친절</td>
+                                <td>18 ■■■■■□□</td>
+                            </tr>
+                            <tr>
+                                <td>예의</td>
+                                <td>9 ■■□□□□□</td>
+                            </tr>
+                        </table>
+                        
+                        <div style="margin-top: 10px; border: 2px ridge #FFD700; background: #FFFACD; padding: 8px;">
+                            <div style="font-weight: bold; margin-bottom: 5px;">□ 입장자 천랑</div>
+                            <table style="width: 100%; font-size: 10px;">
+                                <tr>
+                                    <td>● 바뜨드 Jin LV.10</td>
+                                    <td>15870 / 15870</td>
+                                </tr>
+                                <tr>
+                                    <td>◎ 우아의꿈 LV.6</td>
+                                    <td>31725 / 31725</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <button class="nav-btn" onclick="goToProfile()">【 프로필 】</button>
+            <button class="nav-btn" onclick="goToWorld()">【 세계보기 】</button>
+        </div>
+    </div>
 
-    // quick lookup
-    const byKey = Object.fromEntries(scenes.map(s => [s.key, s]));
+    <!-- 세계 페이지 -->
+    <div id="world-page" class="page">
+        <div class="top-bar">효광품: 250 | 호랙: LV.10 60000리</div>
+        
+        <div class="window-2000s" style="max-width: 900px; margin: 20px auto;">
+            <div class="window-title">♦ 동반자 S의 세계 ♦</div>
+            <div class="window-body">
+                <div style="text-align: center; padding: 10px; background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%); border: 2px ridge #8B6914; margin-bottom: 15px;">
+                    <div style="font-weight: bold; font-size: 14px;">동반자 정보</div>
+                    <div style="font-size: 11px;">제팜: 동암저 S | 체제: 6걸저</div>
+                </div>
+                
+                <div style="font-weight: bold; font-size: 13px; margin-bottom: 10px; color: #8B4513;">
+                    ★ 동반자 S의 세계 ★
+                </div>
+                
+                <div class="world-grid">
+                    <div class="world-card">🚪<br><br>천국의 문</div>
+                    <div class="world-card">🕊️<br><br>빛의 날개</div>
+                    <div class="world-card">🏰<br><br>구름 위의 성</div>
+                    <div class="world-card">🦄<br><br>천마의 초원</div>
+                </div>
+                
+                <div style="border: 3px ridge #FFD700; background: linear-gradient(180deg, #FFFACD 0%, #FFE4B5 100%); padding: 15px;">
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <div style="background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%); border: 2px outset #8B6914; padding: 8px; display: inline-block; font-weight: bold;">
+                            동반자 S
+                        </div>
+                        <div style="font-size: 11px; margin-top: 5px;">이름 LV.10</div>
+                    </div>
+                    
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                        <tr>
+                            <td style="background: #FFE4B5; border: 1px solid #CCC; padding: 5px; font-weight: bold; width: 120px;">장태항</td>
+                            <td style="border: 1px solid #CCC; padding: 5px;">25 기럭적</td>
+                        </tr>
+                        <tr>
+                            <td style="background: #FFE4B5; border: 1px solid #CCC; padding: 5px; font-weight: bold;">억팔</td>
+                            <td style="border: 1px solid #CCC; padding: 5px;">95 기럭거</td>
+                        </tr>
+                        <tr>
+                            <td style="background: #FFE4B5; border: 1px solid #CCC; padding: 5px; font-weight: bold;">적문</td>
+                            <td style="border: 1px solid #CCC; padding: 5px;">18 기더거</td>
+                        </tr>
+                    </table>
+                    
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #FFD700;">
+                        <div style="font-weight: bold; margin-bottom: 8px;">■ 점번아 친로</div>
+                        <div style="font-size: 11px;">
+                            <div>☑ 소럽팔로 LV.70</div>
+                            <div>☑ 외지띠와 31725</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <button class="nav-btn" onclick="goToProfile()">【 프로필 】</button>
+            <button class="nav-btn" onclick="goToChat()">【 채팅하기 】</button>
+        </div>
+    </div>
 
-    const shot = document.getElementById("shot");
-    const overlay = document.getElementById("overlay");
-    const sceneName = document.getElementById("sceneName");
-    const narration = document.getElementById("narration");
-    const btnPrev = document.getElementById("btnPrev");
-    const btnNext = document.getElementById("btnNext");
-    const btnReset = document.getElementById("btnReset");
-    const btnAuto = document.getElementById("btnAuto");
+    <script>
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username && password) {
+                showPage('loading-page');
+                setTimeout(() => {
+                    showPage('profile-page');
+                }, 1500);
+            } else {
+                alert('아이디와 비밀번호를 입력해주세요.');
+            }
+        }
 
-    const loginModal = document.getElementById("loginModal");
-    const btnCancelLogin = document.getElementById("btnCancelLogin");
-    const btnDoLogin = document.getElementById("btnDoLogin");
-    const loginId = document.getElementById("loginId");
-    const loginPw = document.getElementById("loginPw");
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+        }
 
-    let index = 0;
-    let auto = false;
-    let autoTimer = null;
+        function goToProfile() {
+            showPage('profile-page');
+        }
 
-    // 간단한 "대화 진행" 연출용
-    const chatLines = [
-      "S: 오, 잘 왔어! 너무 보고 싶었어~",
-      "S: 오늘은 어떤 이야기를 해볼까?",
-      "S: …좋아. 이제 내 세계를 보여줄게."
-    ];
-    let chatStep = 0;
+        function goToChat() {
+            showPage('chat-page');
+        }
 
-    function clearAuto(){
-      if(autoTimer){
-        clearTimeout(autoTimer);
-        autoTimer = null;
-      }
-    }
+        function goToWorld() {
+            showPage('world-page');
+        }
 
-    function setAuto(on){
-      auto = on;
-      btnAuto.textContent = `자동 진행: ${auto ? "ON" : "OFF"}`;
-      if(auto) maybeScheduleAutoNext();
-      else clearAuto();
-    }
-
-    function maybeScheduleAutoNext(){
-      clearAuto();
-      const s = scenes[index];
-      if(!auto) return;
-      if(s.autoNextMs){
-        autoTimer = setTimeout(() => next(), s.autoNextMs);
-      }
-    }
-
-    function pct(v){ return `${v}%`; }
-
-    function renderHotspots(s){
-      overlay.innerHTML = "";
-
-      (s.hotspots || []).forEach(h => {
-        const b = document.createElement("button");
-        b.className = "hotspot";
-        b.style.left = pct(h.x);
-        b.style.top = pct(h.y);
-        b.style.width = pct(h.w);
-        b.style.height = pct(h.h);
-        b.title = h.label || "";
-        b.addEventListener("click", () => handleAction(h));
-        overlay.appendChild(b);
-      });
-    }
-
-    function gotoScene(key){
-      const idx = scenes.findIndex(s => s.key === key);
-      if(idx >= 0){
-        index = idx;
-        render();
-      }
-    }
-
-    function openLogin(){
-      loginModal.classList.add("on");
-      loginModal.setAttribute("aria-hidden", "false");
-      setTimeout(() => loginId.focus(), 0);
-    }
-
-    function closeLogin(){
-      loginModal.classList.remove("on");
-      loginModal.setAttribute("aria-hidden", "true");
-    }
-
-    function doLogin(){
-      // 실제 인증은 없고, "로그인 했다"는 연출만
-      closeLogin();
-      gotoScene("loading");
-    }
-
-    function handleAction(h){
-      switch(h.action){
-        case "OPEN_LOGIN":
-          openLogin();
-          break;
-        case "GOTO":
-          gotoScene(h.to);
-          break;
-        case "RESET":
-          resetAll();
-          break;
-        case "CHAT_STEP":
-          chatStep = Math.min(chatStep + 1, chatLines.length);
-          // 채팅 장면에서 내레이션을 업데이트
-          narration.textContent = chatStep === 0
-            ? scenes[index].narration
-            : `${chatLines[chatStep-1]}  (클릭해서 더 이어가기)`;
-
-          // 마지막 문장 도달하면 다음 장면을 살짝 유도
-          if(chatStep >= chatLines.length){
-            // 다음 장면(alt)이 있으면 이동, 아니면 초대
-            if(scenes[index].key === "chat") gotoScene("chat2");
-            else gotoScene("invite");
-          }
-          break;
-        default:
-          break;
-      }
-    }
-
-    function render(){
-      const s = scenes[index];
-      shot.src = s.img;
-      sceneName.textContent = s.name;
-      narration.textContent = s.narration;
-
-      // 채팅 단계는 채팅 씬 진입 시 초기화
-      if(s.key === "chat" || s.key === "chat2"){
-        chatStep = 0;
-      }
-
-      renderHotspots(s);
-
-      btnPrev.disabled = index === 0;
-      btnNext.disabled = index === scenes.length - 1;
-
-      maybeScheduleAutoNext();
-    }
-
-    function prev(){
-      index = Math.max(0, index - 1);
-      render();
-    }
-
-    function next(){
-      index = Math.min(scenes.length - 1, index + 1);
-      render();
-    }
-
-    function resetAll(){
-      clearAuto();
-      setAuto(false);
-      closeLogin();
-      index = 0;
-      chatStep = 0;
-      loginId.value = "";
-      loginPw.value = "";
-      render();
-    }
-
-    // events
-    btnPrev.addEventListener("click", prev);
-    btnNext.addEventListener("click", next);
-    btnReset.addEventListener("click", resetAll);
-    btnAuto.addEventListener("click", () => setAuto(!auto));
-
-    btnCancelLogin.addEventListener("click", closeLogin);
-    btnDoLogin.addEventListener("click", doLogin);
-    loginModal.addEventListener("click", (e) => {
-      if(e.target === loginModal) closeLogin();
-    });
-    window.addEventListener("keydown", (e) => {
-      if(e.key === "Escape") closeLogin();
-      if(e.key === "ArrowLeft") prev();
-      if(e.key === "ArrowRight") next();
-      if(e.key === "Enter" && loginModal.classList.contains("on")) doLogin();
-    });
-
-    // start
-    render();
-  </script>
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            
+            if (message) {
+                const messagesContainer = document.getElementById('chat-messages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'chat-msg user';
+                messageDiv.textContent = message;
+                messagesContainer.appendChild(messageDiv);
+                
+                input.value = '';
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                
+                setTimeout(() => {
+                    const replyDiv = document.createElement('div');
+                    replyDiv.className = 'chat-msg npc';
+                    const replies = [
+                        '그렇구나! 재밌는 얘기네~',
+                        '오~ 정말? 더 듣고 싶어!',
+                        '하하 그래? 나도 그렇게 생각해!',
+                        '우와 대단한데? 멋지다!'
+                    ];
+                    replyDiv.textContent = replies[Math.floor(Math.random() * replies.length)];
+                    messagesContainer.appendChild(replyDiv);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }, 800);
+            }
+        }
+    </script>
 </body>
 </html>
