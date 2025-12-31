@@ -89,8 +89,9 @@ body {
 
 .chat-input {
   position: absolute;
-  left: 7.04%;
-  top: 91.47%;
+
+  left: 5.4%;
+  top: 89.3%;
   width: 29.07%;
   height: 7.03%;
 
@@ -103,7 +104,7 @@ body {
   color: #2a1a00;
   caret-color: #2a1a00;
 
-  padding-left: 68px;
+  padding-left: 26px;
   padding-right: 10px;
 }
 
