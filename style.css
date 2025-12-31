@@ -9,16 +9,15 @@ body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
 }
 
-/* 화면 스테이지: 로그인 원본 이미지 비율(1502/887)에 맞춤 */
+/* ✅ 로그인 원본 이미지 비율(1502x887) 기준 */
 .stage {
   position: relative;
   width: min(100vw, 1100px);
-  aspect-ratio: 1502 / 887; /* ✅ 핵심 */
+  aspect-ratio: 1502 / 887;
   overflow: hidden;
   background: #000;
 }
 
-/* 배경 이미지 */
 .bg {
   position: absolute;
   inset: 0;
@@ -28,15 +27,15 @@ body {
   z-index: 0;
 }
 
-/* 투명 버튼(핫스팟) */
+.hidden { display: none; }
+
+/* 투명 핫스팟 버튼 */
 .hotspot {
   position: absolute;
-  background: rgba(255, 255, 255, 0);
+  background: transparent;
   border: none;
   cursor: pointer;
 }
-
-.hidden { display: none; }
 
 /* =========================
    로그인 오버레이
@@ -46,40 +45,36 @@ body {
   inset: 0;
   z-index: 10;
 
-  /* ✅ 오버레이 전체는 클릭 막고 */
+  /* ✅ 오버레이 자체는 이벤트를 막고 */
   pointer-events: none;
 }
 
-/* ✅ input/버튼만 클릭 허용 */
+/* ✅ 실제로 클릭/타이핑되어야 하는 것만 이벤트 허용 */
 .login-input,
 .login-btn-pass,
 .login-btn-enter {
   pointer-events: auto;
 }
 
-/* 입력칸 스타일 (흰 박스 위에 자연스럽게) */
+/* 입력칸: “이미지의 흰 박스 안에 글자만” 올라가게 */
 .login-input {
   position: absolute;
   border: none;
   outline: none;
 
-  /* 박스가 이미 흰색이라 배경은 거의 안 보이게 */
-  background: rgba(255, 255, 255, 0.08);
+  background: transparent;          /* ✅ 박스는 이미지가 이미 흰색 */
   color: #2a1a00;
+  caret-color: #2a1a00;
 
   font-size: clamp(12px, 1.6vw, 18px);
-  padding: 0.45em 0.7em;
-  border-radius: 4px;
+  line-height: 1;
+  padding: 0 0.6em;                 /* 좌우 여백만 살짝 */
+  border-radius: 0;
 
   z-index: 30;
 }
 
-/* =========================
-   ✅ 01_login.jpg 기준 정확 좌표(퍼센트)
-   (1502x887에서 직접 계산)
-========================= */
-
-/* 아이디 흰 박스 */
+/* ✅ 01_login.jpg 기준 정확 좌표(퍼센트) */
 .login-id {
   left: 38.02%;
   top: 59.75%;
@@ -87,7 +82,6 @@ body {
   height: 4.17%;
 }
 
-/* 비밀번호 흰 박스 */
 .login-pw {
   left: 38.08%;
   top: 67.42%;
@@ -95,7 +89,7 @@ body {
   height: 4.17%;
 }
 
-/* 오른쪽 '통과' 버튼 */
+/* 버튼(통과/ENTER) */
 .login-btn-pass {
   left: 61.32%;
   top: 58.96%;
@@ -104,7 +98,6 @@ body {
   z-index: 20;
 }
 
-/* 오른쪽 'ENTER' 버튼 */
 .login-btn-enter {
   left: 61.25%;
   top: 66.74%;
