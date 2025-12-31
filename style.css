@@ -35,9 +35,7 @@ body {
   cursor: pointer;
 }
 
-/* =========================
-   로그인
-========================= */
+/* ===== 로그인 ===== */
 .login-overlay {
   position: absolute;
   inset: 0;
@@ -65,95 +63,53 @@ body {
 }
 
 /* 01_login.jpg(1502x887) */
-.login-id {
-  left: 38.02%;
-  top: 59.75%;
-  width: 21.77%;
-  height: 4.17%;
-}
+.login-id { left: 38.02%; top: 59.75%; width: 21.77%; height: 4.17%; }
+.login-pw { left: 38.08%; top: 67.42%; width: 21.70%; height: 4.17%; }
+.login-btn-pass { left: 61.32%; top: 58.96%; width: 9.85%; height: 5.75%; z-index: 20; }
+.login-btn-enter { left: 61.25%; top: 66.74%; width: 9.79%; height: 4.85%; z-index: 20; }
 
-.login-pw {
-  left: 38.08%;
-  top: 67.42%;
-  width: 21.70%;
-  height: 4.17%;
-}
-
-.login-btn-pass {
-  left: 61.32%;
-  top: 58.96%;
-  width: 9.85%;
-  height: 5.75%;
-  z-index: 20;
-}
-
-.login-btn-enter {
-  left: 61.25%;
-  top: 66.74%;
-  width: 9.79%;
-  height: 4.85%;
-  z-index: 20;
-}
-
-/* =========================
-   채팅(04)
-========================= */
+/* ===== 채팅 ===== */
 .chat-overlay {
   position: absolute;
   inset: 0;
   z-index: 10;
   pointer-events: none;
 }
+.chat-log, .chat-input, .chat-send { pointer-events: auto; }
 
-.chat-log,
-.chat-input,
-.chat-send {
-  pointer-events: auto;
-}
-
-/* ✅ 진짜 흰 박스 “안쪽”만 사용하도록 줄임
-   (벗어나는 문제의 원인이라 높이를 확 줄였음)
-*/
+/* (현재 값) */
 .chat-log {
   position: absolute;
   left: 1.55%;
   top: 48.3%;
   width: 47.10%;
   height: 27.40%;
-
-  overflow: hidden;            /* ✅ 무조건 박스 밖으로 못 나감 */
+  overflow: hidden;
   padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;   /* 아래부터 쌓기 */
+  justify-content: flex-end;
   gap: 6px;
-
   background: rgba(255,255,255,0.0);
 }
 
-/* ✅ 입력칸: 커서가 아이콘 오른쪽 “막대기 위치”에서 시작하게 */
 .chat-input {
   position: absolute;
   left: 1.95%;
   top: 85.45%;
   width: 37.80%;
   height: 10.30%;
-
   border: none;
   outline: none;
   background: transparent;
   color: #2a1a00;
   caret-color: #2a1a00;
-
   font-size: clamp(12px, 1.45vw, 18px);
   line-height: 1;
-
-  /* ✅ 아이콘 영역 만큼 밀기 (커서 시작점) */
-  padding-left: 68px;
+  padding-left: 68px; /* 커서 시작점 */
   padding-right: 10px;
 }
 
-/* 보내기 버튼 */
 .chat-send {
   left: 40.04%;
   top: 85.25%;
@@ -161,41 +117,11 @@ body {
   height: 9.20%;
 }
 
-/* =========================
-   말풍선(이미지) + 텍스트
-   ✅ 말풍선 “좀 줄이기”
-========================= */
-
-/* 말풍선 전체 래퍼 */
-.bubble-wrap {
-  position: relative;
-  flex: 0 0 auto;
-}
-
-/* S 말풍선은 박스 폭의 86%까지만 */
-.bubble-wrap.s {
-  align-self: flex-start;
-  width: 86%;
-  max-width: 520px;
-}
-
-/* 사용자 말풍선은 더 작게(78%) */
-.bubble-wrap.user {
-  align-self: flex-end;
-  width: 78%;
-  max-width: 420px;
-}
-
-/* 말풍선 이미지 자체를 줄이는 핵심: 폭 100%로 맞추고, 래퍼 폭이 작아지면 함께 줄어듦 */
-.bubble-img {
-  display: block;
-  width: 100%;
-  height: auto;
-  user-select: none;
-  pointer-events: none;
-}
-
-/* 텍스트 */
+/* ===== 말풍선(이미지) ===== */
+.bubble-wrap { position: relative; flex: 0 0 auto; }
+.bubble-wrap.s { align-self: flex-start; width: 86%; max-width: 520px; }
+.bubble-wrap.user { align-self: flex-end; width: 78%; max-width: 420px; }
+.bubble-img { display: block; width: 100%; height: auto; user-select: none; pointer-events: none; }
 .bubble-text {
   position: absolute;
   color: rgba(0,0,0,0.82);
@@ -204,27 +130,54 @@ body {
   white-space: pre-wrap;
   word-break: break-word;
 }
-
-/* S(왼쪽 아바타 영역 고려) */
-.bubble-wrap.s.short .bubble-text {
-  left: 88px;
-  right: 20px;
-  top: 14px;
-  bottom: 12px;
-}
-
-.bubble-wrap.s.long .bubble-text {
-  left: 88px;
-  right: 20px;
-  top: 12px;
-  bottom: 10px;
-}
-
-/* 사용자(오른쪽 핑크) */
+.bubble-wrap.s.short .bubble-text { left: 88px; right: 20px; top: 14px; bottom: 12px; }
+.bubble-wrap.s.long  .bubble-text { left: 88px; right: 20px; top: 12px; bottom: 10px; }
 .bubble-wrap.user.short .bubble-text,
-.bubble-wrap.user.long .bubble-text {
-  left: 16px;
-  right: 18px;
-  top: 10px;
+.bubble-wrap.user.long  .bubble-text { left: 16px; right: 18px; top: 10px; bottom: 10px; }
+
+/* =========================
+   ✅ 디버그 좌표 조정 UI
+========================= */
+.debug-hud {
+  position: absolute;
+  right: 10px;
   bottom: 10px;
+  z-index: 9999;
+  width: min(380px, 92vw);
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  pointer-events: auto;
+}
+.debug-title { font-weight: 800; margin-bottom: 6px; }
+.debug-text { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; white-space: pre; }
+.debug-help { opacity: 0.9; margin-top: 6px; line-height: 1.25; }
+
+.dbg-box {
+  position: absolute;
+  z-index: 9998;
+  border: 2px solid rgba(0, 255, 255, 0.9);
+  background: rgba(0, 255, 255, 0.08);
+  color: rgba(255,255,255,0.95);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.dbg-box::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: rgba(255, 140, 0, 0.95);
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.35);
+  cursor: nwse-resize;
 }
