@@ -1,16 +1,17 @@
-const V = "v=12"; // 캐시 방지: 이미지 교체하면 숫자만 올려
+// 캐시 방지 (이미지 바꿨는데 옛날게 보이면 숫자만 올리면 됨)
+const V = "v=20";
 
-// images 폴더 파일명 그대로 (01~05는 jpg, 06은 png)
+// 화면별 이미지 + 종횡비(오버레이 좌표 정확도를 위해 stage 비율을 화면마다 교체)
 const screens = {
-  login:    `./images/01_login.jpg?${V}`,
-  loading:  `./images/02_loading.jpg?${V}`,
-  profile:  `./images/03_profile.jpg?${V}`,
-  chat:     `./images/04_chat.jpg?${V}`,
-  chatAlt:  `./images/05_chat_alt.jpg?${V}`,
-  invite:   `./images/06_invite.png?${V}`,
+  login:   { src: `./images/01_login.jpg?${V}`,    ar: "1502/887"  },
+  loading: { src: `./images/02_loading.jpg?${V}`,  ar: "1502/887"  },
+  chat:    { src: `./images/04_chat.jpg?${V}`,     ar: "1536/1024" },
+  chatAlt: { src: `./images/05_chat_alt.jpg?${V}`, ar: "1536/1024" },
+  profile: { src: `./images/03_profile.jpg?${V}`,  ar: "1536/1024" },
+  invite:  { src: `./images/06_invite.png?${V}`,   ar: "1536/1024" },
 };
 
-// 흐름: 1-2-4-5-3-6
+// 진행: 1-2-4-5-3-6
 const flowNext = {
   login: "loading",
   loading: "chat",
@@ -20,6 +21,15 @@ const flowNext = {
   invite: "login",
 };
 
+// 말풍선 이미지 (spaces -> %20)
+const bubbles = {
+  sShort:  `./images/speech%20bubble%201.png?${V}`, // S 짧음
+  sLong:   `./images/speech%20bubble%202.png?${V}`, // S 김(2줄)
+  uShort:  `./images/speech%20bubble%203.png?${V}`, // User 짧음
+  uLong:   `./images/speech%20bubble%204.png?${V}`, // User 김(2줄)
+};
+
+const stage = document.getElementById("stage");
 const bg = document.getElementById("bg");
 
 // 로그인 오버레이
@@ -38,9 +48,11 @@ const chatSend = document.getElementById("chatSend");
 let currentScreen = "login";
 let loadingTimer = null;
 
-// 채팅 데이터
+// 채팅 상태
 let chatInited = false;
-let messages = [];
+let messages = []; // {from:"s"|"user", text:string}
+
+const MAX_VISIBLE_MESSAGES = 7; // ✅ 길어지면 위로 사라지게: 최근 N개만 보여줌
 
 /* =========================
    화면 전환
@@ -48,27 +60,28 @@ let messages = [];
 function go(name) {
   if (!screens[name]) return;
 
-  // 타이머 정리
   if (loadingTimer) {
     clearTimeout(loadingTimer);
     loadingTimer = null;
   }
 
   currentScreen = name;
-  bg.src = screens[name];
 
-  // 오버레이 제어
+  // ✅ 화면마다 stage 비율 변경(오버레이 좌표 맞추기)
+  stage.style.aspectRatio = screens[name].ar;
+
+  bg.src = screens[name].src;
+
   setLoginOverlayVisible(name === "login");
   setChatOverlayVisible(name === "chat");
 
-  // 로딩(02)은 1초 후 자동으로 04로 이동
+  // 02_loading은 1초 후 자동 → 04_chat
   if (name === "loading") {
     loadingTimer = setTimeout(() => {
-      go(flowNext.loading); // chat
+      go(flowNext.loading);
     }, 1000);
   }
 
-  // 채팅 화면 진입 시 초기 메시지 1회
   if (name === "chat") {
     initChatOnce();
     setTimeout(() => chatInput?.focus(), 0);
@@ -114,45 +127,95 @@ function initChatOnce() {
   chatInited = true;
 
   messages = [
-    { from: "s", text: "오~ 잘 왔어! 너무 보고 싶었어~" }, // ✅ S가 먼저 인사
+    { from: "s", text: "오~ 잘 왔어! 너무 보고 싶었어~" },
   ];
   renderChat();
+}
+
+function isLongText(text) {
+  // “길다” 기준: 글자 수가 어느 정도 이상이거나 문장부호가 여러 개면 2줄 처리
+  const t = (text || "").trim();
+  if (t.length >= 22) return true;
+  const punct = (t.match(/[.!?~…]/g) || []).length;
+  return punct >= 2;
+}
+
+function splitToTwoLines(text) {
+  const t = (text || "").trim();
+  if (!t) return ["", ""];
+
+  // 1) 우선 문장부호 기준으로 나누기
+  const idx = Math.max(
+    t.indexOf("!"),
+    t.indexOf("?"),
+    t.indexOf("."),
+    t.indexOf("~"),
+    t.indexOf("…")
+  );
+  if (idx > 2 && idx < t.length - 2) {
+    const a = t.slice(0, idx + 1).trim();
+    const b = t.slice(idx + 1).trim();
+    if (a && b) return [a, b];
+  }
+
+  // 2) 공백 기준으로 가운데 근처에서 나누기
+  const mid = Math.floor(t.length / 2);
+  let cut = t.lastIndexOf(" ", mid);
+  if (cut < 6) cut = t.indexOf(" ", mid);
+  if (cut < 6) cut = mid;
+
+  const a = t.slice(0, cut).trim();
+  const b = t.slice(cut).trim();
+  return [a || t, b || ""];
+}
+
+function bubbleSrc(from, long) {
+  if (from === "s") return long ? bubbles.sLong : bubbles.sShort;
+  return long ? bubbles.uLong : bubbles.uShort;
+}
+
+function createBubbleMessage(from, text) {
+  const long = isLongText(text);
+
+  const wrap = document.createElement("div");
+  wrap.className = `bubble-wrap ${from === "s" ? "s" : "user"} ${long ? "long" : "short"}`;
+
+  const img = document.createElement("img");
+  img.className = "bubble-img";
+  img.alt = "speech-bubble";
+  img.src = bubbleSrc(from, long);
+
+  const txt = document.createElement("div");
+  txt.className = "bubble-text";
+
+  if (long) {
+    const [a, b] = splitToTwoLines(text);
+    txt.textContent = a + (b ? "\n" + b : "");
+  } else {
+    txt.textContent = text;
+  }
+
+  wrap.appendChild(img);
+  wrap.appendChild(txt);
+  return wrap;
 }
 
 function renderChat() {
   if (!chatLog) return;
 
   chatLog.innerHTML = "";
-  for (const m of messages) {
-    const row = document.createElement("div");
-    row.className = `msg-row ${m.from === "s" ? "s" : "user"}`;
 
-    if (m.from === "s") {
-      const avatar = document.createElement("div");
-      avatar.className = "avatar";
-      avatar.textContent = "S"; // 나중에 이미지로 교체 가능
-      row.appendChild(avatar);
+  // ✅ 최근 N개만 보여서 “위로 사라지는” 효과
+  const visible = messages.slice(-MAX_VISIBLE_MESSAGES);
 
-      const bubble = document.createElement("div");
-      bubble.className = "bubble s";
-      bubble.textContent = m.text;
-      row.appendChild(bubble);
-    } else {
-      const bubble = document.createElement("div");
-      bubble.className = "bubble user";
-      bubble.textContent = m.text;
-      row.appendChild(bubble);
-    }
-
-    chatLog.appendChild(row);
+  for (const m of visible) {
+    chatLog.appendChild(createBubbleMessage(m.from, m.text));
   }
-
-  // 항상 최신으로 스크롤
-  chatLog.scrollTop = chatLog.scrollHeight;
 }
 
 function sendUserMessage() {
   if (currentScreen !== "chat") return;
+
   const text = (chatInput?.value ?? "").trim();
   if (!text) return;
 
@@ -160,26 +223,23 @@ function sendUserMessage() {
   chatInput.value = "";
   renderChat();
 
-  // (선택) S의 간단 자동응답
+  // (선택) 간단 자동응답: 원치 않으면 이 블록 삭제하면 됨
   setTimeout(() => {
-    messages.push({ from: "s", text: pickSReply(text) });
+    messages.push({ from: "s", text: autoReply(text) });
     renderChat();
   }, 350);
 }
 
-function pickSReply(userText) {
-  // 아주 간단한 룰 기반
-  const t = userText.toLowerCase();
-  if (t.includes("오랜만") || t.includes("오랜") || t.includes("롱")) return "맞아… 진짜 오랜만이다. 오늘은 뭐 하고 싶어?";
-  if (t.includes("보고") || t.includes("그리")) return "나도! 그래서 더 반가워 🙂";
-  if (t.includes("?")) return "음… 그건 이렇게 생각해볼까?";
-  return "응응! 계속 말해줘. 나 듣고 있어.";
+function autoReply(userText) {
+  const t = (userText || "").toLowerCase();
+  if (t.includes("오랜") || t.includes("오랜만")) return "진짜 오랜만이다… 요즘 뭐 하고 지냈어?";
+  if (t.includes("보고") || t.includes("그리")) return "나도! 그래서 더 반가워.";
+  if (t.includes("?")) return "흠… 그건 조금 더 자세히 말해줄래?";
+  return "응응, 계속 말해줘. 나 듣고 있어.";
 }
 
-// 보내기 버튼
 chatSend?.addEventListener("click", sendUserMessage);
 
-// 채팅 입력에서 Enter = 보내기
 chatInput?.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     e.preventDefault();
@@ -188,11 +248,11 @@ chatInput?.addEventListener("keydown", (e) => {
 });
 
 /* =========================
-   페이지 진행(클릭으로 넘기기)
+   화면 진행(클릭)
    - login: 버튼으로만
    - loading: 자동
-   - chat: 채팅해야 하니 자동 진행 금지
-   - 나머지(5/3/6): 화면 아무 곳 클릭하면 다음
+   - chat: 채팅해야 하니 클릭으로 넘기지 않음
+   - chatAlt/profile/invite: 화면 아무 곳 클릭하면 다음
 ========================= */
 document.addEventListener("click", () => {
   if (currentScreen === "login") return;
@@ -203,5 +263,5 @@ document.addEventListener("click", () => {
   if (next) go(next);
 });
 
-// 시작 화면
+// 시작
 go("login");
