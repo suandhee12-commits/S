@@ -22,10 +22,30 @@
     <!-- 채팅(04) -->
     <div id="chatOverlay" class="chat-overlay hidden" aria-hidden="true">
       <div id="chatLog" class="chat-log" aria-live="polite"></div>
-
       <input id="chatInput" class="chat-input" type="text" spellcheck="false" />
       <button id="chatSend" class="hotspot chat-send" aria-label="보내기"></button>
     </div>
+
+    <!-- ✅ 디버그 HUD -->
+    <div id="debugHud" class="debug-hud hidden" aria-hidden="true">
+      <div class="debug-title">좌표 조정 모드</div>
+      <div id="debugText" class="debug-text"></div>
+      <div class="debug-help">
+        • 박스를 드래그해서 이동<br/>
+        • 오른쪽 아래 점(핸들)로 크기 조절<br/>
+        • 숫자는 % 기준이라 그대로 CSS에 복붙 가능
+      </div>
+    </div>
+
+    <!-- ✅ 드래그/리사이즈 가능한 오버레이 박스들(디버그용) -->
+    <div id="dbg_chatLog" class="dbg-box hidden" data-target="chat-log">chat-log</div>
+    <div id="dbg_chatInput" class="dbg-box hidden" data-target="chat-input">chat-input</div>
+    <div id="dbg_chatSend" class="dbg-box hidden" data-target="chat-send">chat-send</div>
+
+    <div id="dbg_loginId" class="dbg-box hidden" data-target="login-id">login-id</div>
+    <div id="dbg_loginPw" class="dbg-box hidden" data-target="login-pw">login-pw</div>
+    <div id="dbg_loginPass" class="dbg-box hidden" data-target="login-btn-pass">login-pass</div>
+    <div id="dbg_loginEnter" class="dbg-box hidden" data-target="login-btn-enter">login-enter</div>
   </div>
 
   <script src="./app.js"></script>
