@@ -160,3 +160,9 @@ body {
 .bubble-wrap.user .bubble-text {
   left: 16px; right: 18px; top: 10px; bottom: 10px;
 }
+
+/* 텍스트가 넘칠 때만 말풍선 이미지를 세로로 늘려서 맞추기 */
+.bubble-wrap.stretch .bubble-img {
+  height: 100%;
+  object-fit: fill; /* 전체를 늘림(위아래 포함) */
+}
