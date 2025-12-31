@@ -45,9 +45,7 @@ body {
 
 .login-input,
 .login-btn-pass,
-.login-btn-enter {
-  pointer-events: auto;
-}
+.login-btn-enter { pointer-events: auto; }
 
 .login-input {
   position: absolute;
@@ -77,51 +75,62 @@ body {
 }
 .chat-log, .chat-input, .chat-send { pointer-events: auto; }
 
-/* (현재 값) */
+/* ✅ 네 좌표 + 스크롤 가능 */
 .chat-log {
   position: absolute;
-  left: 1.55%;
-  top: 48.3%;
-  width: 47.10%;
-  height: 27.40%;
-  overflow: hidden;
+  left: 2.91%;
+  top: 60.44%;
+  width: 42.74%;
+  height: 24.67%;
+
+  overflow: auto;              /* ✅ 스크롤로 과거 대화 보기 */
   padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
   gap: 6px;
+
   background: rgba(255,255,255,0.0);
 }
 
+/* 스크롤바가 너무 튀면 얇게 */
+.chat-log::-webkit-scrollbar { width: 8px; }
+.chat-log::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.25); border-radius: 8px; }
+.chat-log::-webkit-scrollbar-track { background: rgba(0,0,0,0.06); border-radius: 8px; }
+
 .chat-input {
   position: absolute;
-  left: 1.95%;
-  top: 85.45%;
-  width: 37.80%;
-  height: 10.30%;
+  left: 7.31%;
+  top: 91.47%;
+  width: 29.80%;
+  height: 7.03%;
+
   border: none;
   outline: none;
   background: transparent;
   color: #2a1a00;
   caret-color: #2a1a00;
+
   font-size: clamp(12px, 1.45vw, 18px);
   line-height: 1;
+
   padding-left: 68px; /* 커서 시작점 */
   padding-right: 10px;
 }
 
+/* ✅ chat-send: 일단 유지 (좌표는 HUD로 다시 뽑아서 교체하면 됨) */
 .chat-send {
-  left: 40.04%;
-  top: 85.25%;
-  width: 8.40%;
+  left: 37.95%;
+  top: 90.53%;
+  width: 8.31%;
   height: 9.20%;
 }
 
-/* ===== 말풍선(이미지) ===== */
+/* ===== 말풍선 ===== */
 .bubble-wrap { position: relative; flex: 0 0 auto; }
 .bubble-wrap.s { align-self: flex-start; width: 86%; max-width: 520px; }
 .bubble-wrap.user { align-self: flex-end; width: 78%; max-width: 420px; }
 .bubble-img { display: block; width: 100%; height: auto; user-select: none; pointer-events: none; }
+
 .bubble-text {
   position: absolute;
   color: rgba(0,0,0,0.82);
@@ -130,54 +139,53 @@ body {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
 .bubble-wrap.s.short .bubble-text { left: 88px; right: 20px; top: 14px; bottom: 12px; }
 .bubble-wrap.s.long  .bubble-text { left: 88px; right: 20px; top: 12px; bottom: 10px; }
 .bubble-wrap.user.short .bubble-text,
 .bubble-wrap.user.long  .bubble-text { left: 16px; right: 18px; top: 10px; bottom: 10px; }
 
 /* =========================
-   ✅ 디버그 좌표 조정 UI
+   ✅ HUD (잘림 방지: 스크롤 가능)
 ========================= */
 .debug-hud {
   position: absolute;
   right: 10px;
   bottom: 10px;
   z-index: 9999;
-  width: min(380px, 92vw);
-  background: rgba(0,0,0,0.65);
+  width: min(420px, 92vw);
+  max-height: 38vh;          /* ✅ 화면에서 안 잘리게 */
+  overflow: auto;            /* ✅ 내부 스크롤 */
+  background: rgba(0,0,0,0.72);
   color: #fff;
   padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  pointer-events: auto;
+}
+
+.debug-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.debug-copy {
+  border: none;
   border-radius: 10px;
-  font-size: 12px;
-  pointer-events: auto;
-}
-.debug-title { font-weight: 800; margin-bottom: 6px; }
-.debug-text { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; white-space: pre; }
-.debug-help { opacity: 0.9; margin-top: 6px; line-height: 1.25; }
-
-.dbg-box {
-  position: absolute;
-  z-index: 9998;
-  border: 2px solid rgba(0, 255, 255, 0.9);
-  background: rgba(0, 255, 255, 0.08);
-  color: rgba(255,255,255,0.95);
-  font-weight: 700;
-  font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 8px;
-  pointer-events: auto;
-  user-select: none;
+  padding: 6px 10px;
+  cursor: pointer;
 }
 
-.dbg-box::after {
-  content: "";
-  position: absolute;
-  right: -6px;
-  bottom: -6px;
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
-  background: rgba(255, 140, 0, 0.95);
-  box-shadow: 0 0 0 2px rgba(0,0,0,0.35);
-  cursor: nwse-resize;
+.debug-text {
+  margin: 0;
+  white-space: pre;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11px;
+  line-height: 1.25;
 }
+
+.debug-help { opacity: 0.9; margin-top: 6px; }
