@@ -1,18 +1,27 @@
-// ✅ 캐시 방지 버전 (이미지 교체했는데 옛날게 보이면 숫자 올려)
-const V = "v=7";
+// ✅ 캐시 방지 버전 (이미지 바꿨는데 옛날게 보이면 숫자만 올려)
+const V = "v=9";
 
-// ✅ 네 GitHub /images 폴더 파일명 그대로
+// ✅ images 폴더 파일명 그대로 (01~05는 jpg, 06은 png)
 const screens = {
   login:    `./images/01_login.jpg?${V}`,
   loading:  `./images/02_loading.jpg?${V}`,
   profile:  `./images/03_profile.jpg?${V}`,
-  chat:     `./images/04_chat.png?${V}`,
-  chatAlt:  `./images/05_chat_alt.png?${V}`,
+  chat:     `./images/04_chat.jpg?${V}`,
+  chatAlt:  `./images/05_chat_alt.jpg?${V}`,
   invite:   `./images/06_invite.png?${V}`,
 };
 
+// 흐름: 1-2-4-5-3-6
+const flowNext = {
+  login: "loading",
+  loading: "chat",
+  chat: "chatAlt",
+  chatAlt: "profile",
+  profile: "invite",
+  invite: "login", // 원하면 마지막은 멈추게 바꿔도 됨
+};
+
 const bg = document.getElementById("bg");
-const stage = document.getElementById("stage");
 
 // 로그인 오버레이
 const loginOverlay = document.getElementById("loginOverlay");
@@ -30,7 +39,7 @@ let loadingTimer = null;
 function go(name) {
   if (!screens[name]) return;
 
-  // 로딩 타이머 정리
+  // 타이머 정리
   if (loadingTimer) {
     clearTimeout(loadingTimer);
     loadingTimer = null;
@@ -42,11 +51,11 @@ function go(name) {
   // login 화면에서만 입력/버튼 표시
   setLoginOverlayVisible(name === "login");
 
-  // ✅ 로딩 화면(02_loading.jpg)은 3초 후 자동 이동
+  // ✅ 2번(loading)은 1초 후 자동으로 다음(04_chat) 이동
   if (name === "loading") {
     loadingTimer = setTimeout(() => {
-      go("profile");
-    }, 3000);
+      go(flowNext.loading); // chat
+    }, 1000);
   }
 }
 
@@ -56,7 +65,6 @@ function setLoginOverlayVisible(visible) {
   loginOverlay.setAttribute("aria-hidden", String(!visible));
 
   if (visible) {
-    // UX: 아이디 자동 포커스
     setTimeout(() => loginId?.focus(), 0);
   }
 }
@@ -65,15 +73,11 @@ function setLoginOverlayVisible(visible) {
    로그인 처리
 ========================= */
 function submitLogin() {
-  // 필요하면 검증 넣기 가능(지금은 입력 없어도 통과)
-  // const id = (loginId?.value ?? "").trim();
-  // const pw = (loginPw?.value ?? "").trim();
-  // if (!id || !pw) return;
-
-  go("loading");
+  // 지금은 데모라 값 없어도 통과
+  go(flowNext.login); // loading
 }
 
-// 버튼 클릭 시 다음 화면
+// 로그인 버튼 클릭 → 다음 화면
 btnPass?.addEventListener("click", submitLogin);
 btnEnter?.addEventListener("click", submitLogin);
 
@@ -86,9 +90,23 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-// 외부에서 go 호출 못 하게 막고 싶으면 아래 줄 삭제해도 됨.
-// 지금은 개발 편의상 남겨둠.
-window.go = go;
+/* =========================
+   화면 진행(클릭으로 넘기기)
+   - 로그인 화면은 버튼으로만
+   - 로딩은 자동
+   - 나머지(4/5/3/6)는 화면 아무 곳 클릭하면 다음으로
+========================= */
+document.addEventListener("click", (e) => {
+  // 로그인: 입력칸 클릭도 있어야 해서 자동 진행 금지
+  if (currentScreen === "login") return;
+
+  // 로딩: 자동 진행만
+  if (currentScreen === "loading") return;
+
+  // 나머지 화면: 어디든 클릭하면 다음
+  const next = flowNext[currentScreen];
+  if (next) go(next);
+});
 
 // 시작 화면
 go("login");
