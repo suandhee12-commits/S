@@ -11,7 +11,7 @@
   <div id="stage" class="stage">
     <img id="bg" class="bg" src="./images/01_login.jpg" alt="screen" />
 
-    <!-- 로그인 화면 전용 오버레이 -->
+    <!-- 로그인 -->
     <div id="loginOverlay" class="login-overlay hidden" aria-hidden="true">
       <input id="loginId" class="login-input login-id" type="text" autocomplete="username" spellcheck="false" />
       <input id="loginPw" class="login-input login-pw" type="password" autocomplete="current-password" />
@@ -19,12 +19,10 @@
       <button id="btnEnter" class="hotspot login-btn-enter" aria-label="ENTER"></button>
     </div>
 
-    <!-- 04_chat 화면 전용 오버레이 -->
+    <!-- 채팅(04) -->
     <div id="chatOverlay" class="chat-overlay hidden" aria-hidden="true">
-      <!-- 왼쪽 아래 큰 흰 박스 안에만 채팅 표시 -->
       <div id="chatLog" class="chat-log" aria-live="polite"></div>
 
-      <!-- 아래 입력 박스 + 보내기 버튼 -->
       <input id="chatInput" class="chat-input" type="text" spellcheck="false" />
       <button id="chatSend" class="hotspot chat-send" aria-label="보내기"></button>
     </div>
