@@ -9,11 +9,11 @@ body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
 }
 
-/* 화면 스테이지 */
+/* 화면 스테이지: 로그인 원본 이미지 비율(1502/887)에 맞춤 */
 .stage {
   position: relative;
   width: min(100vw, 1100px);
-  aspect-ratio: 16 / 9; /* 필요하면 이미지 비율에 맞춰 조정 */
+  aspect-ratio: 1502 / 887; /* ✅ 핵심 */
   overflow: hidden;
   background: #000;
 }
@@ -36,7 +36,6 @@ body {
   cursor: pointer;
 }
 
-/* 숨김 */
 .hidden { display: none; }
 
 /* =========================
@@ -47,72 +46,69 @@ body {
   inset: 0;
   z-index: 10;
 
-  /* ✅ 핵심: 오버레이 전체가 input을 방해하지 않게 */
+  /* ✅ 오버레이 전체는 클릭 막고 */
   pointer-events: none;
 }
 
-/* 입력칸 공통 스타일 (그림 위에 자연스럽게) */
+/* ✅ input/버튼만 클릭 허용 */
+.login-input,
+.login-btn-pass,
+.login-btn-enter {
+  pointer-events: auto;
+}
+
+/* 입력칸 스타일 (흰 박스 위에 자연스럽게) */
 .login-input {
   position: absolute;
   border: none;
   outline: none;
 
-  /* 완전 투명하고 싶으면 아래 두 줄을 0으로 조정 */
-  background: rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(2px);
-
+  /* 박스가 이미 흰색이라 배경은 거의 안 보이게 */
+  background: rgba(255, 255, 255, 0.08);
   color: #2a1a00;
-  font-size: clamp(12px, 1.55vw, 18px);
-  padding: 0.55em 0.8em;
-  border-radius: 6px;
 
-  /* ✅ input은 무조건 클릭/타이핑 가능 */
-  pointer-events: auto;
+  font-size: clamp(12px, 1.6vw, 18px);
+  padding: 0.45em 0.7em;
+  border-radius: 4px;
+
   z-index: 30;
 }
 
-/* ✅ 아이디/비번 위치 (퍼센트 기반)
-   필요하면 left/top/width/height만 미세조정 */
+/* =========================
+   ✅ 01_login.jpg 기준 정확 좌표(퍼센트)
+   (1502x887에서 직접 계산)
+========================= */
+
+/* 아이디 흰 박스 */
 .login-id {
-  left: 35%;
-  top: 49%;
-  width: 40%;
-  height: 8%;
+  left: 38.02%;
+  top: 59.75%;
+  width: 21.77%;
+  height: 4.17%;
 }
 
+/* 비밀번호 흰 박스 */
 .login-pw {
-  left: 35%;
-  top: 59%;
-  width: 40%;
-  height: 8%;
+  left: 38.08%;
+  top: 67.42%;
+  width: 21.70%;
+  height: 4.17%;
 }
 
-/* ✅ 오른쪽 버튼 위치 */
+/* 오른쪽 '통과' 버튼 */
 .login-btn-pass {
-  left: 76.3%;
-  top: 49%;
-  width: 12%;
-  height: 8%;
-
-  /* ✅ 버튼 클릭 가능 */
-  pointer-events: auto;
+  left: 61.32%;
+  top: 58.96%;
+  width: 9.85%;
+  height: 5.75%;
   z-index: 20;
 }
 
+/* 오른쪽 'ENTER' 버튼 */
 .login-btn-enter {
-  left: 76.3%;
-  top: 59%;
-  width: 12%;
-  height: 8%;
-
-  /* ✅ 버튼 클릭 가능 */
-  pointer-events: auto;
+  left: 61.25%;
+  top: 66.74%;
+  width: 9.79%;
+  height: 4.85%;
   z-index: 20;
 }
-
-/* (디버그 필요하면 주석 해제해서 버튼 영역 보이게)
-.login-btn-pass, .login-btn-enter {
-  outline: 2px dashed rgba(255,0,0,.5);
-  background: rgba(255,0,0,.08);
-}
-*/
