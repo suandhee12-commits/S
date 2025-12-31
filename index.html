@@ -9,10 +9,11 @@
 
 <body>
   <div id="stage" class="stage">
-    <img id="bg" class="bg" src="./images/01_login.png" alt="screen" />
+    <img id="bg" class="bg" src="./images/01_login.jpg" alt="screen" />
 
-    <!-- ✅ 로그인 화면에서만 보이는 오버레이 -->
+    <!-- 로그인 화면 전용 오버레이 -->
     <div id="loginOverlay" class="login-overlay hidden" aria-hidden="true">
+      <!-- 흰 박스 위에 정확히 올라가는 입력 -->
       <input
         id="loginId"
         class="login-input login-id"
@@ -29,12 +30,10 @@
         placeholder=""
       />
 
-      <!-- 오른쪽 버튼(이미지 위에 투명 버튼) -->
+      <!-- 오른쪽 버튼(통과/ENTER) -->
       <button id="btnPass" class="hotspot login-btn-pass" aria-label="통과"></button>
       <button id="btnEnter" class="hotspot login-btn-enter" aria-label="ENTER"></button>
     </div>
-
-  
   </div>
 
   <script src="./app.js"></script>
