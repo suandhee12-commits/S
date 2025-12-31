@@ -1,6 +1,4 @@
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -8,15 +6,19 @@ body {
   height: 100vh;
   display: grid;
   place-items: center;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
 }
 
+/* 화면 스테이지 */
 .stage {
   position: relative;
-  width: min(100vw, 960px);
-  aspect-ratio: 16 / 9; /* 필요하면 이미지 비율로 조정 */
+  width: min(100vw, 1100px);
+  aspect-ratio: 16 / 9; /* 필요하면 이미지 비율에 맞춰 조정 */
   overflow: hidden;
+  background: #000;
 }
 
+/* 배경 이미지 */
 .bg {
   position: absolute;
   inset: 0;
@@ -28,12 +30,90 @@ body {
 /* 투명 버튼(핫스팟) */
 .hotspot {
   position: absolute;
-  background: rgba(255,255,255,0);
+  background: rgba(255, 255, 255, 0);
   border: none;
   cursor: pointer;
 }
 
-/* 개발 중일 때만 쓰기 */
-.debug .hotspot {
-  outline: 2px dashed rgba(255,0,0,.4);
+/* 숨김 */
+.hidden { display: none; }
+
+/* =========================
+   로그인 오버레이
+========================= */
+.login-overlay {
+  position: absolute;
+  inset: 0;
+}
+
+/* 입력칸 공통 스타일 (그림 위에 자연스럽게) */
+.login-input {
+  position: absolute;
+  border: none;
+  outline: none;
+
+  /* 완전 투명하고 싶으면 아래 두 줄을 0으로 */
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(2px);
+
+  color: #2a1a00;
+  font-size: clamp(12px, 1.55vw, 18px);
+  padding: 0.55em 0.8em;
+  border-radius: 6px;
+}
+
+/* ✅ 아이디/비번 위치 (퍼센트 기반) */
+.login-id {
+  left: 35%;
+  top: 49%;
+  width: 40%;
+  height: 8%;
+}
+
+.login-pw {
+  left: 35%;
+  top: 59%;
+  width: 40%;
+  height: 8%;
+}
+
+/* ✅ 오른쪽 버튼 위치 */
+.login-btn-pass {
+  left: 76.3%;
+  top: 49%;
+  width: 12%;
+  height: 8%;
+}
+
+.login-btn-enter {
+  left: 76.3%;
+  top: 59%;
+  width: 12%;
+  height: 8%;
+}
+
+/* (선택) 개발용 네비 */
+.dev-nav {
+  position: absolute;
+  left: 1%;
+  bottom: 1%;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(4px);
+}
+
+.dev-nav button {
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.9);
+  cursor: pointer;
+}
+.dev-nav button:hover {
+  background: rgba(255,255,255,0.16);
 }
