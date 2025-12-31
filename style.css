@@ -9,7 +9,6 @@ body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
 }
 
-/* 기본 비율(로그인) — JS에서 화면별로 aspect-ratio를 덮어씀 */
 .stage {
   position: relative;
   width: min(100vw, 1100px);
@@ -37,7 +36,7 @@ body {
 }
 
 /* =========================
-   로그인 오버레이
+   로그인
 ========================= */
 .login-overlay {
   position: absolute;
@@ -65,7 +64,7 @@ body {
   z-index: 30;
 }
 
-/* 01_login.jpg(1502x887) 기준 좌표 */
+/* 01_login.jpg(1502x887) */
 .login-id {
   left: 38.02%;
   top: 59.75%;
@@ -97,8 +96,7 @@ body {
 }
 
 /* =========================
-   04_chat 오버레이
-   ✅ 04_chat.jpg(1536x1024) 기준으로 픽셀→퍼센트 변환해서 맞춤
+   채팅(04)
 ========================= */
 .chat-overlay {
   position: absolute;
@@ -113,27 +111,27 @@ body {
   pointer-events: auto;
 }
 
-/* ✅ 채팅 표시 영역: 왼쪽 아래 큰 흰 박스(안쪽 여백 포함)
-   원본 기준 대략: x=20~760, y=476~808 */
+/* ✅ 진짜 흰 박스 “안쪽”만 사용하도록 줄임
+   (벗어나는 문제의 원인이라 높이를 확 줄였음)
+*/
 .chat-log {
   position: absolute;
-  left: 1.30%;
-  top: 46.48%;
-  width: 48.18%;
-  height: 32.42%;
+  left: 1.55%;
+  top: 48.3%;
+  width: 47.10%;
+  height: 27.40%;
 
-  overflow: hidden;                 /* ✅ 박스 밖으로 절대 안 나감 */
+  overflow: hidden;            /* ✅ 무조건 박스 밖으로 못 나감 */
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;         /* 아래부터 차곡차곡 */
-  gap: 10px;
+  justify-content: flex-end;   /* 아래부터 쌓기 */
+  gap: 6px;
 
-  padding: 10px 12px;
   background: rgba(255,255,255,0.0);
 }
 
-/* ✅ 입력칸: 아래 작은 흰 박스
-   대략: x=30~610, y=875~980 */
+/* ✅ 입력칸: 커서가 아이콘 오른쪽 “막대기 위치”에서 시작하게 */
 .chat-input {
   position: absolute;
   left: 1.95%;
@@ -146,11 +144,16 @@ body {
   background: transparent;
   color: #2a1a00;
   caret-color: #2a1a00;
-  font-size: clamp(12px, 1.5vw, 18px);
-  padding: 0 0.6em;
+
+  font-size: clamp(12px, 1.45vw, 18px);
+  line-height: 1;
+
+  /* ✅ 아이콘 영역 만큼 밀기 (커서 시작점) */
+  padding-left: 68px;
+  padding-right: 10px;
 }
 
-/* ✅ 보내기 버튼: '보내기' 버튼 위를 덮는 투명 버튼 */
+/* 보내기 버튼 */
 .chat-send {
   left: 40.04%;
   top: 85.25%;
@@ -159,20 +162,31 @@ body {
 }
 
 /* =========================
-   말풍선(이미지) 렌더
+   말풍선(이미지) + 텍스트
+   ✅ 말풍선 “좀 줄이기”
 ========================= */
 
+/* 말풍선 전체 래퍼 */
 .bubble-wrap {
   position: relative;
-  width: min(92%, 540px);
   flex: 0 0 auto;
 }
 
-.bubble-wrap.user {
-  align-self: flex-end;
-  width: min(82%, 430px);
+/* S 말풍선은 박스 폭의 86%까지만 */
+.bubble-wrap.s {
+  align-self: flex-start;
+  width: 86%;
+  max-width: 520px;
 }
 
+/* 사용자 말풍선은 더 작게(78%) */
+.bubble-wrap.user {
+  align-self: flex-end;
+  width: 78%;
+  max-width: 420px;
+}
+
+/* 말풍선 이미지 자체를 줄이는 핵심: 폭 100%로 맞추고, 래퍼 폭이 작아지면 함께 줄어듦 */
 .bubble-img {
   display: block;
   width: 100%;
@@ -181,35 +195,36 @@ body {
   pointer-events: none;
 }
 
+/* 텍스트 */
 .bubble-text {
   position: absolute;
   color: rgba(0,0,0,0.82);
-  font-size: clamp(12px, 1.25vw, 16px);
-  line-height: 1.25;
+  font-size: clamp(12px, 1.10vw, 15px);
+  line-height: 1.22;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
-/* S 말풍선(1/2): 왼쪽에 아바타 영역이 있으니 텍스트를 오른쪽으로 밀기 */
+/* S(왼쪽 아바타 영역 고려) */
 .bubble-wrap.s.short .bubble-text {
-  left: 92px;
-  right: 22px;
-  top: 18px;
-  bottom: 16px;
-}
-
-.bubble-wrap.s.long .bubble-text {
-  left: 92px;
-  right: 22px;
-  top: 16px;
-  bottom: 14px;
-}
-
-/* 사용자 말풍선(3/4): 우측 꼬리, 좌우 여백만 */
-.bubble-wrap.user.short .bubble-text,
-.bubble-wrap.user.long .bubble-text {
-  left: 18px;
+  left: 88px;
   right: 20px;
   top: 14px;
   bottom: 12px;
+}
+
+.bubble-wrap.s.long .bubble-text {
+  left: 88px;
+  right: 20px;
+  top: 12px;
+  bottom: 10px;
+}
+
+/* 사용자(오른쪽 핑크) */
+.bubble-wrap.user.short .bubble-text,
+.bubble-wrap.user.long .bubble-text {
+  left: 16px;
+  right: 18px;
+  top: 10px;
+  bottom: 10px;
 }
