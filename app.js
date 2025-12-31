@@ -1,4 +1,5 @@
-const V = "v=25"; // 캐시 방지: 이미지 바꾸면 숫자만 올려
+const DEBUG = true; // ✅ 좌표 조정 끝나면 false로 바꾸면 흔적 사라짐
+const V = "v=30";
 
 const screens = {
   login:   { src: `./images/01_login.jpg?${V}`,    ar: "1502/887"  },
@@ -18,7 +19,6 @@ const flowNext = {
   invite: "login",
 };
 
-// 말풍선 이미지 (파일명에 공백 있으니 %20)
 const bubbles = {
   sShort: `./images/speech%20bubble%201.png?${V}`,
   sLong:  `./images/speech%20bubble%202.png?${V}`,
@@ -29,15 +29,16 @@ const bubbles = {
 const stage = document.getElementById("stage");
 const bg = document.getElementById("bg");
 
-// login
+// overlays
 const loginOverlay = document.getElementById("loginOverlay");
+const chatOverlay = document.getElementById("chatOverlay");
+
+// login
 const loginId = document.getElementById("loginId");
-const loginPw = document.getElementById("loginPw");
 const btnPass = document.getElementById("btnPass");
 const btnEnter = document.getElementById("btnEnter");
 
 // chat
-const chatOverlay = document.getElementById("chatOverlay");
 const chatLog = document.getElementById("chatLog");
 const chatInput = document.getElementById("chatInput");
 const chatSend = document.getElementById("chatSend");
@@ -45,12 +46,14 @@ const chatSend = document.getElementById("chatSend");
 let currentScreen = "login";
 let loadingTimer = null;
 
+// chat state
 let chatInited = false;
 let messages = [];
-
-// ✅ 최근 N개만 보여서 “위로 사라짐”
 const MAX_VISIBLE_MESSAGES = 6;
 
+/* =========================
+   화면 전환
+========================= */
 function go(name) {
   if (!screens[name]) return;
 
@@ -63,13 +66,16 @@ function go(name) {
   stage.style.aspectRatio = screens[name].ar;
   bg.src = screens[name].src;
 
-  setLoginOverlayVisible(name === "login");
-  setChatOverlayVisible(name === "chat");
+  setVisible(loginOverlay, name === "login");
+  setVisible(chatOverlay, name === "chat");
+
+  // 디버그 박스는 해당 화면에서만 보이게
+  updateDebugVisibility();
+
+  if (name === "login") setTimeout(() => loginId?.focus(), 0);
 
   if (name === "loading") {
-    loadingTimer = setTimeout(() => {
-      go(flowNext.loading); // chat
-    }, 1000);
+    loadingTimer = setTimeout(() => go(flowNext.loading), 1000);
   }
 
   if (name === "chat") {
@@ -78,23 +84,18 @@ function go(name) {
   }
 }
 
-function setLoginOverlayVisible(visible) {
-  loginOverlay.classList.toggle("hidden", !visible);
-  loginOverlay.setAttribute("aria-hidden", String(!visible));
-  if (visible) setTimeout(() => loginId?.focus(), 0);
+function setVisible(el, visible) {
+  if (!el) return;
+  el.classList.toggle("hidden", !visible);
+  el.setAttribute("aria-hidden", String(!visible));
 }
 
-function setChatOverlayVisible(visible) {
-  chatOverlay.classList.toggle("hidden", !visible);
-  chatOverlay.setAttribute("aria-hidden", String(!visible));
-}
-
-function submitLogin() {
-  go(flowNext.login); // loading
-}
-
-btnPass.addEventListener("click", submitLogin);
-btnEnter.addEventListener("click", submitLogin);
+/* =========================
+   로그인
+========================= */
+function submitLogin() { go(flowNext.login); }
+btnPass?.addEventListener("click", submitLogin);
+btnEnter?.addEventListener("click", submitLogin);
 
 document.addEventListener("keydown", (e) => {
   if (currentScreen === "login" && e.key === "Enter") {
@@ -104,7 +105,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* =========================
-   채팅 말풍선 규칙
+   채팅
 ========================= */
 function isLongText(text) {
   const t = (text || "").trim();
@@ -116,8 +117,6 @@ function isLongText(text) {
 function splitToTwoLines(text) {
   const t = (text || "").trim();
   if (!t) return ["", ""];
-
-  // 문장부호로 나누기
   const marks = ["!", "?", ".", "~", "…"];
   for (const m of marks) {
     const idx = t.indexOf(m);
@@ -127,16 +126,11 @@ function splitToTwoLines(text) {
       if (a && b) return [a, b];
     }
   }
-
-  // 공백 기준
   const mid = Math.floor(t.length / 2);
   let cut = t.lastIndexOf(" ", mid);
   if (cut < 6) cut = t.indexOf(" ", mid);
   if (cut < 6) cut = mid;
-
-  const a = t.slice(0, cut).trim();
-  const b = t.slice(cut).trim();
-  return [a || t, b || ""];
+  return [t.slice(0, cut).trim() || t, t.slice(cut).trim() || ""];
 }
 
 function bubbleSrc(from, long) {
@@ -157,7 +151,6 @@ function createBubbleMessage(from, text) {
 
   const txt = document.createElement("div");
   txt.className = "bubble-text";
-
   if (long) {
     const [a, b] = splitToTwoLines(text);
     txt.textContent = a + (b ? "\n" + b : "");
@@ -179,7 +172,6 @@ function renderChat() {
 function initChatOnce() {
   if (chatInited) return;
   chatInited = true;
-
   messages = [{ from: "s", text: "오~ 잘 왔어! 너무 보고 싶었어~" }];
   renderChat();
 }
@@ -207,23 +199,197 @@ function sendUserMessage() {
   }, 350);
 }
 
-chatSend.addEventListener("click", sendUserMessage);
-
-chatInput.addEventListener("keydown", (e) => {
+chatSend?.addEventListener("click", sendUserMessage);
+chatInput?.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     e.preventDefault();
     sendUserMessage();
   }
 });
 
-/* 클릭 진행 */
+/* =========================
+   페이지 클릭 진행
+========================= */
 document.addEventListener("click", () => {
   if (currentScreen === "login") return;
   if (currentScreen === "loading") return;
   if (currentScreen === "chat") return;
-
   const next = flowNext[currentScreen];
   if (next) go(next);
+});
+
+/* =========================
+   ✅ 디버그: 드래그/리사이즈로 좌표 뽑기
+========================= */
+const debugHud = document.getElementById("debugHud");
+const debugText = document.getElementById("debugText");
+
+// 디버그 박스들
+const dbg = {
+  chatLog: document.getElementById("dbg_chatLog"),
+  chatInput: document.getElementById("dbg_chatInput"),
+  chatSend: document.getElementById("dbg_chatSend"),
+  loginId: document.getElementById("dbg_loginId"),
+  loginPw: document.getElementById("dbg_loginPw"),
+  loginPass: document.getElementById("dbg_loginPass"),
+  loginEnter: document.getElementById("dbg_loginEnter"),
+};
+
+function updateDebugVisibility() {
+  if (!DEBUG) {
+    debugHud?.classList.add("hidden");
+    Object.values(dbg).forEach(el => el?.classList.add("hidden"));
+    return;
+  }
+
+  debugHud?.classList.remove("hidden");
+  debugHud?.setAttribute("aria-hidden", "false");
+
+  // 현재 화면에 맞는 박스만 보여주기
+  const onLogin = currentScreen === "login";
+  const onChat = currentScreen === "chat";
+
+  // login
+  dbg.loginId.classList.toggle("hidden", !onLogin);
+  dbg.loginPw.classList.toggle("hidden", !onLogin);
+  dbg.loginPass.classList.toggle("hidden", !onLogin);
+  dbg.loginEnter.classList.toggle("hidden", !onLogin);
+
+  // chat
+  dbg.chatLog.classList.toggle("hidden", !onChat);
+  dbg.chatInput.classList.toggle("hidden", !onChat);
+  dbg.chatSend.classList.toggle("hidden", !onChat);
+
+  // 박스 초기 위치는 실제 요소의 현재 %를 복제
+  if (onLogin) {
+    syncDbgToCss("login-id", dbg.loginId);
+    syncDbgToCss("login-pw", dbg.loginPw);
+    syncDbgToCss("login-btn-pass", dbg.loginPass);
+    syncDbgToCss("login-btn-enter", dbg.loginEnter);
+  }
+  if (onChat) {
+    syncDbgToCss("chat-log", dbg.chatLog);
+    syncDbgToCss("chat-input", dbg.chatInput);
+    syncDbgToCss("chat-send", dbg.chatSend);
+  }
+
+  writeHud();
+}
+
+function syncDbgToCss(className, el) {
+  // 실제 적용 중인 스타일 값을 읽어 debug 박스에 반영
+  const temp = document.createElement("div");
+  temp.className = className;
+  temp.style.position = "absolute";
+  temp.style.visibility = "hidden";
+  stage.appendChild(temp);
+
+  const cs = getComputedStyle(temp);
+  // stage 기준 픽셀 값
+  el.style.left = cs.left;
+  el.style.top = cs.top;
+  el.style.width = cs.width;
+  el.style.height = cs.height;
+
+  stage.removeChild(temp);
+}
+
+let active = null;
+
+function onPointerDown(e) {
+  const box = e.currentTarget;
+  e.preventDefault();
+
+  const rect = box.getBoundingClientRect();
+  const stageRect = stage.getBoundingClientRect();
+
+  const isResize = isOnResizeHandle(e, rect);
+  active = {
+    box,
+    mode: isResize ? "resize" : "move",
+    startX: e.clientX,
+    startY: e.clientY,
+    startLeft: rect.left - stageRect.left,
+    startTop: rect.top - stageRect.top,
+    startW: rect.width,
+    startH: rect.height,
+    stageW: stageRect.width,
+    stageH: stageRect.height,
+  };
+
+  window.addEventListener("pointermove", onPointerMove);
+  window.addEventListener("pointerup", onPointerUp, { once: true });
+}
+
+function isOnResizeHandle(e, rect) {
+  // 오른쪽 아래 18x18 영역이면 resize로 판정
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  return x > rect.width - 22 && y > rect.height - 22;
+}
+
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+function onPointerMove(e) {
+  if (!active) return;
+
+  const dx = e.clientX - active.startX;
+  const dy = e.clientY - active.startY;
+
+  if (active.mode === "move") {
+    const left = clamp(active.startLeft + dx, 0, active.stageW - active.startW);
+    const top = clamp(active.startTop + dy, 0, active.stageH - active.startH);
+    active.box.style.left = `${left}px`;
+    active.box.style.top = `${top}px`;
+  } else {
+    const w = clamp(active.startW + dx, 20, active.stageW - active.startLeft);
+    const h = clamp(active.startH + dy, 20, active.stageH - active.startTop);
+    active.box.style.width = `${w}px`;
+    active.box.style.height = `${h}px`;
+  }
+
+  writeHud();
+}
+
+function onPointerUp() {
+  window.removeEventListener("pointermove", onPointerMove);
+  active = null;
+}
+
+function pxToPct(px, total) {
+  return (px / total) * 100;
+}
+
+function writeHud() {
+  if (!DEBUG || !debugText) return;
+
+  const stageRect = stage.getBoundingClientRect();
+
+  const visibleBoxes = Object.values(dbg).filter(el => !el.classList.contains("hidden"));
+  const lines = [];
+
+  for (const el of visibleBoxes) {
+    const r = el.getBoundingClientRect();
+    const leftPx = r.left - stageRect.left;
+    const topPx = r.top - stageRect.top;
+    const wPx = r.width;
+    const hPx = r.height;
+
+    const left = pxToPct(leftPx, stageRect.width).toFixed(2);
+    const top = pxToPct(topPx, stageRect.height).toFixed(2);
+    const width = pxToPct(wPx, stageRect.width).toFixed(2);
+    const height = pxToPct(hPx, stageRect.height).toFixed(2);
+
+    const target = el.dataset.target;
+    lines.push(`.${target} { left: ${left}%; top: ${top}%; width: ${width}%; height: ${height}%; }`);
+  }
+
+  debugText.textContent = lines.join("\n");
+}
+
+// 이벤트 바인딩
+Object.values(dbg).forEach((el) => {
+  el.addEventListener("pointerdown", onPointerDown);
 });
 
 go("login");
