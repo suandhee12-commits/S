@@ -60,7 +60,7 @@ body {
   z-index: 30;
 }
 
-/* 01_login.jpg(1502x887) */
+/* 01_login.jpg */
 .login-id { left: 38.02%; top: 59.75%; width: 21.77%; height: 4.17%; }
 .login-pw { left: 38.08%; top: 67.42%; width: 21.70%; height: 4.17%; }
 .login-btn-pass { left: 61.32%; top: 58.96%; width: 9.85%; height: 5.75%; z-index: 20; }
@@ -75,7 +75,7 @@ body {
 }
 .chat-log, .chat-input, .chat-send { pointer-events: auto; }
 
-/* ✅ 네 좌표 + 스크롤 가능 */
+/* 시작 좌표(여기서 디버그로 맞추면 됨) */
 .chat-log {
   position: absolute;
   left: 2.91%;
@@ -83,19 +83,13 @@ body {
   width: 42.74%;
   height: 24.67%;
 
-  overflow: auto;              /* ✅ 스크롤로 과거 대화 보기 */
+  overflow: auto;
   padding: 8px 10px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-
   background: rgba(255,255,255,0.0);
 }
-
-/* 스크롤바가 너무 튀면 얇게 */
-.chat-log::-webkit-scrollbar { width: 8px; }
-.chat-log::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.25); border-radius: 8px; }
-.chat-log::-webkit-scrollbar-track { background: rgba(0,0,0,0.06); border-radius: 8px; }
 
 .chat-input {
   position: absolute;
@@ -112,12 +106,10 @@ body {
 
   font-size: clamp(12px, 1.45vw, 18px);
   line-height: 1;
-
-  padding-left: 68px; /* 커서 시작점 */
+  padding-left: 68px;
   padding-right: 10px;
 }
 
-/* ✅ chat-send: 일단 유지 (좌표는 HUD로 다시 뽑아서 교체하면 됨) */
 .chat-send {
   left: 37.95%;
   top: 90.53%;
@@ -130,7 +122,6 @@ body {
 .bubble-wrap.s { align-self: flex-start; width: 86%; max-width: 520px; }
 .bubble-wrap.user { align-self: flex-end; width: 78%; max-width: 420px; }
 .bubble-img { display: block; width: 100%; height: auto; user-select: none; pointer-events: none; }
-
 .bubble-text {
   position: absolute;
   color: rgba(0,0,0,0.82);
@@ -139,14 +130,13 @@ body {
   white-space: pre-wrap;
   word-break: break-word;
 }
-
 .bubble-wrap.s.short .bubble-text { left: 88px; right: 20px; top: 14px; bottom: 12px; }
 .bubble-wrap.s.long  .bubble-text { left: 88px; right: 20px; top: 12px; bottom: 10px; }
 .bubble-wrap.user.short .bubble-text,
 .bubble-wrap.user.long  .bubble-text { left: 16px; right: 18px; top: 10px; bottom: 10px; }
 
 /* =========================
-   ✅ HUD (잘림 방지: 스크롤 가능)
+   ✅ 디버그 HUD (스크롤 가능)
 ========================= */
 .debug-hud {
   position: absolute;
@@ -154,8 +144,8 @@ body {
   bottom: 10px;
   z-index: 9999;
   width: min(420px, 92vw);
-  max-height: 38vh;          /* ✅ 화면에서 안 잘리게 */
-  overflow: auto;            /* ✅ 내부 스크롤 */
+  max-height: 40vh;
+  overflow: auto;
   background: rgba(0,0,0,0.72);
   color: #fff;
   padding: 10px 12px;
@@ -188,4 +178,34 @@ body {
   line-height: 1.25;
 }
 
-.debug-help { opacity: 0.9; margin-top: 6px; }
+.debug-help { opacity: 0.9; margin-top: 6px; line-height: 1.25; }
+
+/* =========================
+   ✅ 파란 조절 박스
+========================= */
+.dbg-box {
+  position: absolute;
+  z-index: 9998;
+  border: 2px solid rgba(0, 255, 255, 0.95);
+  background: rgba(0, 255, 255, 0.10);
+  color: rgba(255,255,255,0.95);
+  font-weight: 800;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.dbg-box::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: rgba(255, 140, 0, 0.98);
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.35);
+  cursor: nwse-resize;
+}
