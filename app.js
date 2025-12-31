@@ -1,7 +1,7 @@
 /* =========================
    ✅ 너가 바꿀 곳(딱 1줄)
    ========================= */
-const API_BASE = "https://s-chat-api.vercel.app";
+const API_BASE = "https://s-chat-api.vercel.app"; // 끝에 / 붙이지 마
 
 /* 캐시 무효화 버전 */
 const V = "vFINAL";
@@ -53,17 +53,23 @@ let currentScreen = "login";
 let loadingTimer = null;
 let chatInited = false;
 let messages = [];
+let sending = false; // ✅ 중복 호출 방지
 
 /* =========================
    GPT 연결 유틸
    ========================= */
 
-/* messages -> API history 변환 (최근 10개만) */
+/* messages -> API history 변환 (최근 10개만)
+   ✅ "…" 같은 임시 메시지는 히스토리에서 제외
+*/
 function toApiHistory(msgs) {
-  return msgs.slice(-10).map(m => ({
-    role: m.from === "s" ? "assistant" : "user",
-    content: m.text
-  }));
+  return msgs
+    .filter(m => m.text && m.text.trim() !== "…") // 임시 제거
+    .slice(-10)
+    .map(m => ({
+      role: m.from === "s" ? "assistant" : "user",
+      content: m.text
+    }));
 }
 
 /* 서버(Vercel)로 보내서 S 답변 받기 */
@@ -71,15 +77,27 @@ async function fetchSReply(userText, msgs) {
   const res = await fetch(`${API_BASE}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    // ✅ 서버가 userText/history 받는 형식 유지
     body: JSON.stringify({
       userText,
       history: toApiHistory(msgs)
     })
   });
 
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data?.error || `API error (${res.status})`);
-  return (data.text || "").trim() || "…";
+  // 응답 파싱(실패해도 에러 메시지 확인)
+  let data = {};
+  try { data = await res.json(); } catch { data = {}; }
+
+  if (!res.ok) {
+    const msg = data?.error || data?.message || `API error (${res.status})`;
+    const err = new Error(msg);
+    err.status = res.status;
+    throw err;
+  }
+
+  // ✅ 여러 키 대비
+  const text = (data.text || data.reply || data.message || "").trim();
+  return text || "…";
 }
 
 /* =========================
@@ -151,15 +169,24 @@ function initChat() {
   if (chatInited) return;
   chatInited = true;
 
-  // 첫 인사 (원하면 여기도 GPT로 바꿀 수 있지만, 일단 고정)
   messages.push({ from: "s", text: "오~ 잘 왔어! 너무 보고 싶었어~" });
   render();
+}
+
+function lockSend(lock) {
+  sending = lock;
+  if (!chatSend) return;
+  chatSend.disabled = lock;
+  chatSend.style.opacity = lock ? "0.6" : "1";
 }
 
 /* ✅ 보내기: 유저 입력 -> GPT 호출 -> S 답변 */
 async function sendMessage() {
   const text = chatInput.value.trim();
   if (!text) return;
+  if (sending) return; // ✅ 연타 방지
+
+  lockSend(true);
 
   // 유저 말풍선
   messages.push({ from: "user", text });
@@ -171,18 +198,29 @@ async function sendMessage() {
   render();
 
   try {
-    // 임시 '…' 제외하고 히스토리 구성
+    // ✅ 임시 '…' 제외한 히스토리로 요청
     const reply = await fetchSReply(text, messages.slice(0, -1));
-    // 마지막 '…'를 실제 답으로 교체
     messages[messages.length - 1] = { from: "s", text: reply };
   } catch (e) {
-    messages[messages.length - 1] = {
-      from: "s",
-      text: "지금은 잠시 연결이 불안정해. 조금만 다시 말해줄래?"
-    };
+    // ✅ 429는 쿨다운 안내
+    if (e?.status === 429 || String(e?.message || "").includes("429")) {
+      messages[messages.length - 1] = {
+        from: "s",
+        text: "지금 말이 너무 몰려서 잠깐 숨 고르는 중이야. 5초만 기다려줘."
+      };
+      render();
+      await new Promise(r => setTimeout(r, 5000));
+    } else {
+      messages[messages.length - 1] = {
+        from: "s",
+        text: "지금은 잠시 연결이 불안정해. 조금만 다시 말해줄래?"
+      };
+    }
+  } finally {
+    render();
+    lockSend(false);
+    chatInput?.focus();
   }
-
-  render();
 }
 
 chatSend.onclick = () => { sendMessage(); };
