@@ -9,7 +9,7 @@ body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
 }
 
-/* ✅ 로그인 원본 이미지 비율(1502x887) 기준 */
+/* ✅ 기본은 로그인 이미지 비율 기준(1502x887) */
 .stage {
   position: relative;
   width: min(100vw, 1100px);
@@ -29,7 +29,6 @@ body {
 
 .hidden { display: none; }
 
-/* 투명 핫스팟 버튼 */
 .hotspot {
   position: absolute;
   background: transparent;
@@ -44,19 +43,15 @@ body {
   position: absolute;
   inset: 0;
   z-index: 10;
-
-  /* ✅ 오버레이 자체는 이벤트 막고 */
   pointer-events: none;
 }
 
-/* ✅ 실제로 클릭/타이핑되어야 하는 것만 이벤트 허용 */
 .login-input,
 .login-btn-pass,
 .login-btn-enter {
   pointer-events: auto;
 }
 
-/* 입력칸: 이미지 흰 박스 위에 글자만 올라가게 */
 .login-input {
   position: absolute;
   border: none;
@@ -69,12 +64,11 @@ body {
   font-size: clamp(12px, 1.6vw, 18px);
   line-height: 1;
   padding: 0 0.6em;
-  border-radius: 0;
 
   z-index: 30;
 }
 
-/* ✅ 01_login.jpg 기준 정확 좌표(퍼센트) */
+/* ✅ 01_login.jpg 좌표 */
 .login-id {
   left: 38.02%;
   top: 59.75%;
@@ -89,7 +83,6 @@ body {
   height: 4.17%;
 }
 
-/* 버튼(통과/ENTER) */
 .login-btn-pass {
   left: 61.32%;
   top: 58.96%;
@@ -104,4 +97,130 @@ body {
   width: 9.79%;
   height: 4.85%;
   z-index: 20;
+}
+
+/* =========================
+   ✅ 채팅 오버레이 (04_chat)
+========================= */
+.chat-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none; /* 전체는 막고, 필요한 것만 푼다 */
+}
+
+.chat-log,
+.chat-input,
+.chat-send {
+  pointer-events: auto;
+}
+
+/* -------------------------------------------------------
+   ✅ 여기 3개가 “좌표 조정 포인트”
+   04_chat.jpg에서:
+   - chat-log: 위의 큰 흰 박스(대화 영역)
+   - chat-input: 아래 작은 흰 박스(입력)
+   - chat-send: '보내기' 버튼 영역
+-------------------------------------------------------- */
+
+/* 대화 영역(흰 박스) */
+.chat-log {
+  position: absolute;
+  left: 4%;
+  top: 56%;
+  width: 62%;
+  height: 33%;
+
+  overflow-y: auto;
+  padding: 1.2% 1.2%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  /* 이미지 위라서 배경은 거의 투명 */
+  background: rgba(255,255,255,0.00);
+}
+
+/* 입력칸(아래 작은 흰 박스) */
+.chat-input {
+  position: absolute;
+  left: 6.5%;
+  top: 91%;
+  width: 50%;
+  height: 6%;
+
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #2a1a00;
+  caret-color: #2a1a00;
+  font-size: clamp(12px, 1.5vw, 18px);
+  padding: 0 0.6em;
+}
+
+/* 보내기 버튼(‘보내기’ 글자 위를 덮도록) */
+.chat-send {
+  left: 58%;
+  top: 90.8%;
+  width: 10%;
+  height: 7%;
+}
+
+/* -------------------------------------------------------
+   말풍선 스타일 (이미지 분위기에 맞게 “가벼운 오버레이”)
+-------------------------------------------------------- */
+
+.msg-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.msg-row.s {
+  justify-content: flex-start;
+}
+
+.msg-row.user {
+  justify-content: flex-end;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  flex: 0 0 auto;
+
+  /* 실제 사진 대신 간단한 아이콘(필요하면 나중에 이미지로 교체 가능) */
+  background: rgba(0,0,0,0.15);
+  display: grid;
+  place-items: center;
+  color: rgba(0,0,0,0.65);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.bubble {
+  max-width: 72%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  line-height: 1.25;
+  font-size: clamp(12px, 1.35vw, 16px);
+  white-space: pre-wrap;
+  word-break: break-word;
+
+  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+}
+
+/* S(왼쪽 흰 말풍선 느낌) */
+.bubble.s {
+  background: rgba(255,255,255,0.78);
+  color: rgba(0,0,0,0.8);
+  border-top-left-radius: 6px;
+}
+
+/* 사용자(오른쪽 핑크 말풍선 느낌) */
+.bubble.user {
+  background: rgba(255, 198, 214, 0.82);
+  color: rgba(0,0,0,0.82);
+  border-top-right-radius: 6px;
 }
