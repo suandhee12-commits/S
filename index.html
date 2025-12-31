@@ -4,6 +4,10 @@
   <meta charset="utf-8" />
   <title>동반자 S</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Pretendard -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+
   <link rel="stylesheet" href="./style.css" />
 </head>
 
@@ -12,40 +16,21 @@
     <img id="bg" class="bg" src="./images/01_login.jpg" alt="screen" />
 
     <!-- 로그인 -->
-    <div id="loginOverlay" class="login-overlay hidden" aria-hidden="true">
-      <input id="loginId" class="login-input login-id" type="text" autocomplete="username" spellcheck="false" />
-      <input id="loginPw" class="login-input login-pw" type="password" autocomplete="current-password" />
-      <button id="btnPass" class="hotspot login-btn-pass" aria-label="통과"></button>
-      <button id="btnEnter" class="hotspot login-btn-enter" aria-label="ENTER"></button>
+    <div id="loginOverlay" class="login-overlay hidden">
+      <input id="loginId" class="login-input login-id" type="text" />
+      <input id="loginPw" class="login-input login-pw" type="password" />
+      <button id="btnPass" class="hotspot login-btn-pass"></button>
+      <button id="btnEnter" class="hotspot login-btn-enter"></button>
     </div>
 
-    <!-- 채팅(04) -->
-    <div id="chatOverlay" class="chat-overlay hidden" aria-hidden="true">
-      <div id="chatLog" class="chat-log" aria-live="polite"></div>
-      <input id="chatInput" class="chat-input" type="text" spellcheck="false" />
-      <button id="chatSend" class="hotspot chat-send" aria-label="보내기"></button>
+    <!-- 채팅 -->
+    <div id="chatOverlay" class="chat-overlay hidden">
+      <div id="chatLog" class="chat-log"></div>
+      <input id="chatInput" class="chat-input" type="text" />
+      <button id="chatSend" class="hotspot chat-send"></button>
     </div>
-
-    <!-- ✅ 디버그 HUD -->
-    <div id="debugHud" class="debug-hud hidden" aria-hidden="true">
-      <div class="debug-title">
-        좌표 조절 모드
-        <button id="copyHud" class="debug-copy" type="button">복사</button>
-      </div>
-      <pre id="debugText" class="debug-text"></pre>
-      <div class="debug-help">
-        • 파란 박스를 드래그해서 이동<br/>
-        • 오른쪽 아래 주황 점으로 크기 조절<br/>
-        • 나온 %좌표를 style.css에 그대로 붙여넣기
-      </div>
-    </div>
-
-    <!-- ✅ 드래그/리사이즈 박스(채팅용) -->
-    <div id="dbg_chatLog" class="dbg-box hidden" data-target="chat-log">chat-log</div>
-    <div id="dbg_chatInput" class="dbg-box hidden" data-target="chat-input">chat-input</div>
-    <div id="dbg_chatSend" class="dbg-box hidden" data-target="chat-send">chat-send</div>
   </div>
 
-  <script src="./app.js?v=9999"></script>
+  <script src="./app.js?v=FINAL"></script>
 </body>
 </html>
