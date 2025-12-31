@@ -26,17 +26,26 @@
       <button id="chatSend" class="hotspot chat-send" aria-label="보내기"></button>
     </div>
 
-    <!-- ✅ HUD만 (스크롤 가능) -->
+    <!-- ✅ 디버그 HUD -->
     <div id="debugHud" class="debug-hud hidden" aria-hidden="true">
       <div class="debug-title">
-        좌표 복사용 HUD
+        좌표 조절 모드
         <button id="copyHud" class="debug-copy" type="button">복사</button>
       </div>
       <pre id="debugText" class="debug-text"></pre>
-      <div class="debug-help">HUD가 길면 아래로 스크롤해서 끝까지 확인 가능</div>
+      <div class="debug-help">
+        • 파란 박스를 드래그해서 이동<br/>
+        • 오른쪽 아래 주황 점으로 크기 조절<br/>
+        • 나온 %좌표를 style.css에 그대로 붙여넣기
+      </div>
     </div>
+
+    <!-- ✅ 드래그/리사이즈 박스(채팅용) -->
+    <div id="dbg_chatLog" class="dbg-box hidden" data-target="chat-log">chat-log</div>
+    <div id="dbg_chatInput" class="dbg-box hidden" data-target="chat-input">chat-input</div>
+    <div id="dbg_chatSend" class="dbg-box hidden" data-target="chat-send">chat-send</div>
   </div>
 
-  <script src="./app.js?v=1100"></script>
+  <script src="./app.js?v=1200"></script>
 </body>
 </html>
