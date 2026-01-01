@@ -4,52 +4,51 @@
   <meta charset="utf-8" />
   <title>동반자 S</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
-  <link rel="stylesheet" href="./style-2.css" />
+
+  <!-- 폰트 -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+
+  <!-- ✅ 숫자 없는 style.css -->
+  <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
   <div id="stage" class="stage">
-    <!-- 배경(화면) -->
-    <img id="bg" class="bg" src="./images/01_login.jpg" alt="screen" />
+    <!-- 배경 -->
+    <img id="bg" class="bg" src="./images/01_login.jpg" alt="screen">
 
-    <!-- 지지직(글리치) 전환 오버레이 -->
-    <div id="glitchOverlay" class="glitch-overlay hidden" aria-hidden="true"></div>
+    <!-- 글리치 오버레이 -->
+    <div id="glitchOverlay" class="glitch-overlay hidden"></div>
 
-    <!-- 채팅 화면(메인) 왼쪽 위 영상 -->
-    <video
-      id="mainVideo"
-      class="main-video hidden"
-      autoplay
-      muted
-      loop
-      playsinline
-      preload="auto"
-    >
-      <source src="./videos/main.mp4" type="video/mp4" />
+    <!-- 메인 비디오 -->
+    <video id="mainVideo" class="main-video hidden"
+           autoplay muted loop playsinline preload="auto">
+      <source src="./videos/main.mp4" type="video/mp4">
     </video>
 
     <!-- 로그인 -->
     <div id="loginOverlay" class="login-overlay">
-      <input id="loginId" class="login-input login-id" type="text" autocomplete="off" />
-      <input id="loginPw" class="login-input login-pw" type="password" autocomplete="off" />
-      <button id="btnPass" class="hotspot login-btn-pass" aria-label="비밀번호"></button>
-      <button id="btnEnter" class="hotspot login-btn-enter" aria-label="입장"></button>
+      <input id="loginId" class="login-input login-id">
+      <input id="loginPw" class="login-input login-pw" type="password">
+      <button id="btnPass" class="hotspot login-btn-pass"></button>
+      <button id="btnEnter" class="hotspot login-btn-enter"></button>
     </div>
 
     <!-- 채팅 -->
     <div id="chatOverlay" class="chat-overlay hidden">
       <div id="chatLog" class="chat-log"></div>
-      <input id="chatInput" class="chat-input" type="text" autocomplete="off" />
-      <button id="chatSend" class="hotspot chat-send" aria-label="보내기"></button>
+      <input id="chatInput" class="chat-input">
+      <button id="chatSend" class="hotspot chat-send"></button>
     </div>
 
-    <!-- invite: 하단 텍스트 박스 -->
-    <div id="inviteOverlay" class="invite-overlay hidden" aria-hidden="true">
-      <div id="inviteText" class="invite-text" role="status" aria-live="polite"></div>
+    <!-- invite 하단 텍스트 -->
+    <div id="inviteOverlay" class="invite-overlay hidden">
+      <div id="inviteText" class="invite-text"></div>
     </div>
   </div>
 
+  <!-- ✅ 숫자 없는 app.js -->
   <script src="./app.js"></script>
 </body>
 </html>
