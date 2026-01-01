@@ -27,6 +27,35 @@ body {
 
 .hidden { display: none; }
 
+/* =========================
+   ✅ 메인(채팅) 왼쪽 위 영상
+   - 튜닝 모드에서는 드래그/휠로 위치/크기 조절 가능
+   ========================= */
+.main-video{
+  position: absolute;
+  /* 🎯 여기 숫자만 바꾸면서 맞추면 됨(%) */
+  left: 2.5%;
+  top: 3.0%;
+  width: 18%;
+  height: 16%;
+
+  object-fit: cover; /* 필요하면 contain으로 변경 */
+  border-radius: 10px;
+
+  z-index: 5;
+
+  /* 기본은 클릭/드래그 방지(튜닝 모드에서만 켬) */
+  pointer-events: none;
+}
+
+/* stage에 tune 클래스가 붙으면: 눈에 보이게 조절 모드 ON */
+.stage.tune .main-video{
+  pointer-events: auto;
+  cursor: move;
+  outline: 2px solid rgba(0, 160, 255, 0.85);
+  outline-offset: 2px;
+}
+
 .hotspot {
   position: absolute;
   background: transparent;
