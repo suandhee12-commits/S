@@ -35,9 +35,10 @@ const mainVideo = document.getElementById("mainVideo");
 
 const loginOverlay = document.getElementById("loginOverlay");
 const chatOverlay = document.getElementById("chatOverlay");
-const glitchOverlay = document.getElementById("glitchOverlay"); // ✅ 글리치 전환 오버레이
+const glitchOverlay = document.getElementById("glitchOverlay"); // ✅ 글리치 오버레이
 
 const loginId = document.getElementById("loginId");
+const loginPw = document.getElementById("loginPw"); // (HTML에 있으면 사용)
 const btnPass = document.getElementById("btnPass");
 const btnEnter = document.getElementById("btnEnter");
 
@@ -59,7 +60,7 @@ let glitching = false;
 /* ✅ 최종본: 튜닝 OFF */
 const VIDEO_TUNE = false;
 function setVideoTune(_) {
-  // 최종본이라 아무것도 안 함(파란 윤곽선/드래그/휠 없음)
+  // 최종본이라 아무것도 안 함
 }
 
 /* messages -> API history 변환 (최근 10개만) */
@@ -96,7 +97,14 @@ async function fetchSReply(userText, msgs) {
   return text || "…";
 }
 
-/* ✅ 글리치(지직) 전환 → 실제 화면 전환 */
+function lockSend(lock) {
+  sending = lock;
+  if (!chatSend) return;
+  chatSend.disabled = lock;
+  chatSend.style.opacity = lock ? "0.6" : "1";
+}
+
+/* ✅ 3초 “화려한 찢김 + RGB + 빛” 글리치 전환 */
 function glitchTo(nextScreen) {
   if (glitching) return;
   if (!screens[nextScreen]) return;
@@ -104,7 +112,6 @@ function glitchTo(nextScreen) {
   glitching = true;
   lockSend(true);
 
-  // 오버레이가 없으면 그냥 전환
   if (!glitchOverlay || !bg) {
     go(nextScreen);
     glitching = false;
@@ -115,36 +122,53 @@ function glitchTo(nextScreen) {
   const fromSrc = bg.currentSrc || bg.src;
   const toSrc = screens[nextScreen].src;
 
-  // 오버레이 구성
   glitchOverlay.classList.remove("hidden");
   glitchOverlay.classList.add("on");
   glitchOverlay.innerHTML = "";
 
-  // 현재 화면(기본)
-  const a = document.createElement("img");
-  a.className = "glitch-layer";
-  a.src = fromSrc;
+  // 베이스(현재 화면)
+  const base = document.createElement("img");
+  base.className = "glitch-base";
+  base.src = fromSrc;
 
-  // 현재 화면(RGB 분리)
-  const aRgb = document.createElement("img");
-  aRgb.className = "glitch-layer rgb";
-  aRgb.src = fromSrc;
-  aRgb.style.opacity = "0.85";
+  // RGB 레이어(현재 화면)
+  const baseRgb = document.createElement("img");
+  baseRgb.className = "glitch-base glitch-rgb";
+  baseRgb.src = fromSrc;
+  baseRgb.style.opacity = "0.9";
 
-  // 다음 화면(RGB 분리, 중간에 번쩍)
-  const bRgb = document.createElement("img");
-  bRgb.className = "glitch-layer rgb";
-  bRgb.src = toSrc;
-  bRgb.style.opacity = "0";
+  // 빛 플래시 레이어
+  const flash = document.createElement("div");
+  flash.className = "glitch-flash";
 
-  glitchOverlay.append(a, aRgb, bRgb);
+  glitchOverlay.append(base, baseRgb, flash);
 
-  // 다음 화면이 지직 사이로 잠깐 보이게 (TV 느낌)
-  setTimeout(() => { bRgb.style.opacity = "0.9"; }, 140);
-  setTimeout(() => { bRgb.style.opacity = "0.2"; }, 240);
-  setTimeout(() => { bRgb.style.opacity = "1.0"; }, 320);
+  // 찢김 슬라이스(다음 화면 조각들)
+  const SLICE_COUNT = 16; // 많을수록 화려
+  for (let i = 0; i < SLICE_COUNT; i++) {
+    const s = document.createElement("img");
+    s.className = "glitch-slice glitch-rgb";
+    s.src = toSrc;
 
-  // 마무리: 실제 전환 + 오버레이 정리
+    // 랜덤 가로 찢김 영역(퍼센트)
+    const top = Math.random() * 92;
+    const h = 2 + Math.random() * 10; // 2%~12%
+    const bottom = Math.min(100, top + h);
+
+    s.style.clipPath = `polygon(0% ${top}%, 100% ${top}%, 100% ${bottom}%, 0% ${bottom}%)`;
+
+    // 각 슬라이스 타이밍/세기 다르게
+    const delay = (Math.random() * 0.9).toFixed(3); // 0~0.9s
+    s.style.animationDelay = `${delay}s`;
+
+    // 슬라이스마다 방향 다르게 튀게
+    const dx = (Math.random() * 60 - 30).toFixed(1);
+    s.style.transform = `translateX(${dx}px)`;
+
+    glitchOverlay.appendChild(s);
+  }
+
+  // 3초 유지 후 실제 화면 전환
   setTimeout(() => {
     go(nextScreen);
 
@@ -154,7 +178,7 @@ function glitchTo(nextScreen) {
 
     glitching = false;
     lockSend(false);
-  }, 450);
+  }, 3000);
 }
 
 /* 화면 전환 */
@@ -167,7 +191,7 @@ function go(name) {
   stage.style.aspectRatio = screens[name].ar;
   bg.src = screens[name].src;
 
-  // ✅ 영상은 chat에서만 보이게 (좌표/크기는 CSS로 고정됨)
+  // ✅ 영상은 chat에서만 보이게
   const showVideo = (name === "chat");
   if (mainVideo) {
     mainVideo.classList.toggle("hidden", !showVideo);
@@ -186,7 +210,9 @@ function go(name) {
   if (loginOverlay) loginOverlay.classList.toggle("hidden", name !== "login");
   if (chatOverlay) chatOverlay.classList.toggle("hidden", name !== "chat");
 
-  if (name === "login") setTimeout(() => loginId?.focus(), 0);
+  if (name === "login") {
+    setTimeout(() => loginId?.focus(), 0);
+  }
 
   if (name === "loading") {
     loadingTimer = setTimeout(() => go("chat"), 1000);
@@ -235,7 +261,6 @@ function initChat() {
   if (chatInited) return;
   chatInited = true;
 
-  // ✅ chat 첫 진입 시 카운트 초기화
   userSendCount = 0;
   glitching = false;
 
@@ -243,13 +268,7 @@ function initChat() {
   render();
 }
 
-function lockSend(lock) {
-  sending = lock;
-  if (!chatSend) return;
-  chatSend.disabled = lock;
-  chatSend.style.opacity = lock ? "0.6" : "1";
-}
-
+/* 보내기 */
 async function sendMessage() {
   if (!chatInput) return;
 
@@ -267,7 +286,7 @@ async function sendMessage() {
   // ✅ 유저 전송 횟수 카운트
   userSendCount += 1;
 
-  // ✅ 5번째 전송이면 지직(글리치+RGB) 후 invite로
+  // ✅ 5번째 전송이면 3초 글리치 후 invite로
   if (currentScreen === "chat" && userSendCount >= 5) {
     glitchTo("invite");
     return;
@@ -293,6 +312,26 @@ async function sendMessage() {
 if (btnPass) btnPass.onclick = () => go("loading");
 if (btnEnter) btnEnter.onclick = () => go("loading");
 
+// 로그인 입력에서 Enter로 넘어가고 싶으면(선택)
+if (loginId) {
+  loginId.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      // 비번칸이 있으면 거기로, 없으면 로딩으로
+      if (loginPw) loginPw.focus();
+      else go("loading");
+    }
+  });
+}
+if (loginPw) {
+  loginPw.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      go("loading");
+    }
+  });
+}
+
 if (chatSend) chatSend.onclick = sendMessage;
 if (chatInput) {
   chatInput.addEventListener("keydown", (e) => {
@@ -306,6 +345,7 @@ if (chatInput) {
 /* (선택) 화면 클릭으로 다음 화면 넘기기: 채팅/로그인/로딩은 제외 */
 document.addEventListener("click", () => {
   if (currentScreen === "chat" || currentScreen === "login" || currentScreen === "loading") return;
+  if (glitching) return;
   const next = flowNext[currentScreen];
   if (next) go(next);
 });
