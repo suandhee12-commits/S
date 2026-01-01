@@ -5,9 +5,7 @@
   <title>동반자 S</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Pretendard -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
-
   <link rel="stylesheet" href="./style.css" />
 </head>
 
@@ -15,12 +13,18 @@
   <div id="stage" class="stage">
     <img id="bg" class="bg" src="./images/01_login.jpg" alt="screen" />
 
-    <!-- ✅ 메인 화면(채팅) 왼쪽 위 영상 -->
-    <video id="mainVideo" class="main-video hidden"
+    <!-- ✅ 채팅 화면 왼쪽 위 영상 -->
+    <video
+      id="mainVideo"
+      class="main-video hidden"
       src="./videos/main.mp4"
-      playsinline muted loop preload="auto"></video>
+      playsinline
+      muted
+      loop
+      preload="auto"
+    ></video>
 
-    <!-- 로그인 -->
+    <!-- 로그인 오버레이 -->
     <div id="loginOverlay" class="login-overlay hidden">
       <input id="loginId" class="login-input login-id" type="text" />
       <input id="loginPw" class="login-input login-pw" type="password" />
@@ -28,7 +32,7 @@
       <button id="btnEnter" class="hotspot login-btn-enter"></button>
     </div>
 
-    <!-- 채팅 -->
+    <!-- 채팅 오버레이 -->
     <div id="chatOverlay" class="chat-overlay hidden">
       <div id="chatLog" class="chat-log"></div>
       <input id="chatInput" class="chat-input" type="text" />
@@ -36,6 +40,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=FINAL"></script>
+  <script src="./app.js"></script>
 </body>
 </html>
