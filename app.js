@@ -4,7 +4,7 @@
 const API_BASE = "https://s-chat-api.vercel.app"; // 끝에 / 붙이지 마
 
 /* 캐시 무효화 버전 */
-const V = "vFINAL";
+const V = "vFIX1";
 
 /* 화면/이미지 */
 const screens = {
@@ -16,62 +16,127 @@ const screens = {
   invite:  { src: `./images/06_invite.png?${V}`, ar: "1536/1024" },
 };
 
+const flowNext = {
+  login: "loading",
+  loading: "chat",
+  chat: "chatAlt",
+  chatAlt: "profile",
+  profile: "invite",
+  invite: "login",
+};
+
+/* 말풍선 이미지 */
 const bubbles = {
-  uShort: `./images/bubble_user_short.png?${V}`,
-  uLong:  `./images/bubble_user_long.png?${V}`,
-  sShort: `./images/bubble_s_short.png?${V}`,
-  sLong:  `./images/bubble_s_long.png?${V}`,
+  sShort: `./images/speech%20bubble%201.png?${V}`,
+  sLong:  `./images/speech%20bubble%202.png?${V}`,
+  uShort: `./images/speech%20bubble%203.png?${V}`,
+  uLong:  `./images/speech%20bubble%204.png?${V}`,
 };
 
 /* DOM */
 const stage = document.getElementById("stage");
+const bg = document.getElementById("bg");
+
+const loginOverlay = document.getElementById("loginOverlay");
+const chatOverlay = document.getElementById("chatOverlay");
+
+const loginId = document.getElementById("loginId");
+const btnPass = document.getElementById("btnPass");
+const btnEnter = document.getElementById("btnEnter");
+
 const chatLog = document.getElementById("chatLog");
 const chatInput = document.getElementById("chatInput");
-const sendBtn = document.getElementById("sendBtn");
-const loginBtn = document.getElementById("loginBtn");
+const chatSend = document.getElementById("chatSend");
 
-/* 상태 */
+/* state */
 let currentScreen = "login";
+let loadingTimer = null;
 let chatInited = false;
-let sending = false;
 let messages = [];
+let sending = false; // 중복 호출 방지
 
-/* 화면 전환 */
-function go(screenName) {
-  currentScreen = screenName;
-
-  // 배경 이미지 교체
-  const sc = screens[screenName] || screens.login;
-  stage.style.backgroundImage = `url("${sc.src}")`;
-  stage.style.aspectRatio = sc.ar;
-
-  // 화면별 UI 토글
-  document.body.dataset.screen = screenName;
-
-  if (screenName === "chat") initChat();
+/* =========================
+   API
+   ========================= */
+function toApiHistory(msgs) {
+  return msgs
+    .filter(m => (m?.text || "").trim() !== "")
+    .slice(-10)
+    .map(m => ({
+      role: m.from === "s" ? "assistant" : "user",
+      content: m.text
+    }));
 }
 
-/* 로그인 -> 로딩 -> 채팅 */
-loginBtn.onclick = () => {
-  go("loading");
-  setTimeout(() => go("chat"), 1200);
-};
+async function fetchSReply(userText, msgs) {
+  const res = await fetch(`${API_BASE}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userText,
+      history: toApiHistory(msgs)
+    })
+  });
 
-/* 채팅 alternate 화면 전환 */
-document.getElementById("btnProfile")?.addEventListener("click", () => go("profile"));
-document.getElementById("btnInvite")?.addEventListener("click", () => go("invite"));
-document.getElementById("btnBack")?.addEventListener("click", () => go("chatAlt"));
-document.getElementById("btnBack2")?.addEventListener("click", () => go("chatAlt"));
+  let data = {};
+  try { data = await res.json(); } catch { data = {}; }
 
-/* profile/invite -> chatAlt -> chat */
-const flowNext = { profile: "invite", invite: "chatAlt", chatAlt: "chat" };
+  if (!res.ok) {
+    const msg = data?.error || data?.message || `API error (${res.status})`;
+    const err = new Error(msg);
+    err.status = res.status;
+    throw err;
+  }
 
-/* 말풍선 길이 판단(너가 원하는 기준으로 바꿔도 됨) */
+  const text = (data.text || data.reply || data.message || "").trim();
+  return text || "…";
+}
+
+/* =========================
+   화면 전환
+   ========================= */
+function go(name) {
+  if (!screens[name]) return;
+
+  if (loadingTimer) clearTimeout(loadingTimer);
+
+  currentScreen = name;
+  stage.style.aspectRatio = screens[name].ar;
+  bg.src = screens[name].src;
+
+  // 오버레이는 login / chat만 사용 (나머지는 배경만)
+  loginOverlay.classList.toggle("hidden", name !== "login");
+  chatOverlay.classList.toggle("hidden", name !== "chat");
+
+  if (name === "login") setTimeout(() => loginId?.focus(), 0);
+
+  if (name === "loading") {
+    loadingTimer = setTimeout(() => go("chat"), 1000);
+  }
+
+  if (name === "chat") initChat();
+}
+
+/* 로그인: 버튼 클릭 */
+btnPass.onclick = () => go("loading");
+btnEnter.onclick = () => go("loading");
+
+/* ✅ 로그인: 엔터키로도 넘어가기 */
+loginId.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    go("loading");
+  }
+});
+
+/* =========================
+   말풍선 렌더
+   ========================= */
 function isLong(text) {
-  return (text || "").length >= 20;
+  const t = text || "";
+  return t.length > 22 || (t.match(/[.!?]/g) || []).length >= 2;
 }
 
-/* 말풍선 DOM */
 function bubble(from, text) {
   const long = isLong(text);
   const wrap = document.createElement("div");
@@ -91,6 +156,7 @@ function bubble(from, text) {
   return wrap;
 }
 
+/* ✅ 텍스트 길어지면 말풍선(이미지 포함) 세로로 늘리기 */
 function adjustBubbleHeights() {
   const wraps = chatLog.querySelectorAll(".bubble-wrap");
 
@@ -99,39 +165,42 @@ function adjustBubbleHeights() {
     const txt = wrap.querySelector(".bubble-text");
     if (!img || !txt) return;
 
-    // 이미지 로드 전이면 로드 후 다시 계산
+    const run = () => {
+      // 현재 폭 기준 원본 비율로 "기본 높이" 계산
+      const baseH =
+        Number(wrap.dataset.baseH) ||
+        (wrap.dataset.baseH = String(wrap.clientWidth * (img.naturalHeight / img.naturalWidth)));
+
+      // bubble-text absolute top/bottom 고려
+      const cs = getComputedStyle(txt);
+      const top = parseFloat(cs.top) || 0;
+      const bottom = parseFloat(cs.bottom) || 0;
+
+      const available = baseH - top - bottom;
+      const need = txt.scrollHeight;
+
+      if (need > available) {
+        const extra = (need - available) + 10; // 여유
+        wrap.style.height = `${baseH + extra}px`;
+
+        // CSS 안 건드리고 JS로 이미지도 함께 늘림
+        img.style.width = "100%";
+        img.style.height = "100%";
+        img.style.objectFit = "fill";
+      } else {
+        wrap.style.height = "";
+        img.style.width = "";
+        img.style.height = "";
+        img.style.objectFit = "";
+      }
+    };
+
+    // 이미지 로드 전이면 로드 후 계산
     if (!img.naturalWidth || !img.naturalHeight) {
-      img.addEventListener("load", adjustBubbleHeights, { once: true });
+      img.addEventListener("load", run, { once: true });
       return;
     }
-
-    // 현재 폭 기준으로 "원래 말풍선 높이" 계산(비율 유지)
-    const baseH =
-      Number(wrap.dataset.baseH) ||
-      (wrap.dataset.baseH = String(wrap.clientWidth * (img.naturalHeight / img.naturalWidth)));
-
-    // bubble-text의 top/bottom(absolute) 값을 고려해 텍스트가 쓸 수 있는 공간 계산
-    const cs = getComputedStyle(txt);
-    const top = parseFloat(cs.top) || 0;
-    const bottom = parseFloat(cs.bottom) || 0;
-    const available = baseH - top - bottom;
-
-    const need = txt.scrollHeight;
-
-    if (need > available) {
-      const extra = (need - available) + 8; // 약간의 여유
-      wrap.style.height = `${baseH + extra}px`;
-
-      // CSS 수정 없이 JS에서 바로 이미지도 함께 늘리기
-      img.style.height = "100%";
-      img.style.width = "100%";
-      img.style.objectFit = "fill";
-    } else {
-      wrap.style.height = "";
-      img.style.height = "";
-      img.style.width = "";
-      img.style.objectFit = "";
-    }
+    run();
   });
 }
 
@@ -140,7 +209,7 @@ function render() {
   messages.forEach(m => chatLog.appendChild(bubble(m.from, m.text)));
   chatLog.scrollTop = chatLog.scrollHeight;
 
-  // 렌더된 뒤 레이아웃이 확정된 다음 말풍선 높이 보정
+  // 레이아웃 확정 후 높이 보정 (2번 raf가 안전)
   requestAnimationFrame(() => requestAnimationFrame(adjustBubbleHeights));
 }
 
@@ -152,39 +221,15 @@ function initChat() {
   chatInited = true;
 
   messages.push({ from: "s", text: "오~ 잘 왔어! 너무 보고 싶었어~" });
-  render()
+  render();
 }
 
-/* 전송 잠금 */
 function lockSend(on) {
   sending = on;
-  sendBtn.disabled = on;
+  chatSend.disabled = on;
   chatInput.disabled = on;
 }
 
-/* API 호출 */
-async function fetchSReply(userText, historyMessages) {
-  const res = await fetch(`${API_BASE}/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      messages: historyMessages
-        .filter(m => m.text && m.text.trim() !== "")
-        .slice(-10)
-        .map(m => ({
-          role: m.from === "s" ? "assistant" : "user",
-          content: m.text
-        })),
-      userText
-    })
-  });
-
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  const data = await res.json();
-  return data.reply || "…";
-}
-
-/* 메시지 전송 */
 async function sendMessage() {
   if (sending) return;
 
@@ -198,13 +243,12 @@ async function sendMessage() {
   chatInput.value = "";
   render();
 
-  // S 생각중 말풍선(임시)
+  // S 생각중(임시)
   messages.push({ from: "s", text: "…" });
   render();
 
   try {
-    // ✅ 임시 '…' 제외한 히스토리로 요청
-    const reply = await fetchSReply(text, messages.slice(0, -1));
+    const reply = await fetchSReply(text, messages.slice(0, -1)); // 임시 '…' 제외
     messages[messages.length - 1] = { from: "s", text: reply };
     render();
   } catch (e) {
@@ -217,21 +261,24 @@ async function sendMessage() {
   }
 }
 
-/* 버튼 / 엔터 */
-sendBtn.onclick = sendMessage;
+/* 채팅: 버튼/엔터 */
+chatSend.onclick = sendMessage;
 
-chatInput.onkeydown = (e) => {
+chatInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     e.preventDefault();
     sendMessage();
   }
-};
+});
 
-/* 클릭으로 다음 화면 (기존 로직 유지) */
-document.onclick = () => {
+/* 배경 화면(프로필/초대 등)에서 클릭하면 다음 화면 */
+document.addEventListener("click", (e) => {
+  // 입력 중/버튼 클릭은 그냥 통과
+  if (e.target === loginId || e.target === chatInput || e.target === btnPass || e.target === btnEnter || e.target === chatSend) return;
+
   if (currentScreen === "chat" || currentScreen === "login" || currentScreen === "loading") return;
-  go(flowNext[currentScreen]);
-};
+  go(flowNext[currentScreen] || "login");
+});
 
 /* 시작 */
 go("login");
