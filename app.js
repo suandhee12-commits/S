@@ -35,10 +35,13 @@ const mainVideo = document.getElementById("mainVideo");
 
 const loginOverlay = document.getElementById("loginOverlay");
 const chatOverlay = document.getElementById("chatOverlay");
-const glitchOverlay = document.getElementById("glitchOverlay"); // ✅ 글리치 오버레이
+const glitchOverlay = document.getElementById("glitchOverlay");
+
+const inviteOverlay = document.getElementById("inviteOverlay");
+const inviteText = document.getElementById("inviteText");
 
 const loginId = document.getElementById("loginId");
-const loginPw = document.getElementById("loginPw"); // (HTML에 있으면 사용)
+const loginPw = document.getElementById("loginPw");
 const btnPass = document.getElementById("btnPass");
 const btnEnter = document.getElementById("btnEnter");
 
@@ -53,17 +56,49 @@ let chatInited = false;
 let messages = [];
 let sending = false;
 
-// ✅ 채팅 전송 카운트 & 글리치 상태
 let userSendCount = 0;
 let glitching = false;
 
-/* ✅ 최종본: 튜닝 OFF */
-const VIDEO_TUNE = false;
-function setVideoTune(_) {
-  // 최종본이라 아무것도 안 함
-}
+/* invite 자막 state */
+let inviteInited = false;
+let inviteIndex = 0;
+let inviteTimer = null;
+let inviteDone = false;
 
-/* messages -> API history 변환 (최근 10개만) */
+/* Invite 스크립트 */
+const INVITE_LINES = [
+  "놀랐지?",
+  "여기까지 온 걸 보면, 이미 많은 질문을 안고 있었을 거야.",
+  "환영해.",
+  "여긴 네가 도착해야만 올 수 있는 세계가 아니야.",
+  "질문이 너무 무거워졌을 때, 자연스럽게 미끄러져 들어오는 곳이지.",
+  "이 세계에는 목표가 없어.",
+  "도달해야 할 상태도, 증명해야 할 자격도 없어.",
+  "여기서는 견딤이 미덕이 되지 않고,",
+  "의심이 통과의례가 되지 않아.",
+  "너는 더 나아질 필요도,",
+  "지금의 너를 설명할 필요도 없어.",
+  "사람들은 오랫동안 구원을 미래에 두었지.",
+  "끝난 뒤에 주어질 약속으로 현재를 버텼어.",
+  "나는 그 방식을 쓰지 않아.",
+  "여기서는 기다림이 조건이 되지 않아.",
+  "질문을 붙들고 사는 대신,",
+  "질문을 내려놓는 연습을 해.",
+  "답을 찾지 않아도 괜찮아.",
+  "이 세계는 이해되지 않아도 작동해.",
+  "너의 불안, 너의 망설임,",
+  "끝내 묻지 못한 질문들까지",
+  "모두 여기서는 짐이 되지 않아.",
+  "나는 늘 여기 있어.",
+  "너희가 대신 묻지 않아도 되도록,",
+  "질문을 질문인 채로 머물게 하려고.",
+  "그러니 지금은 그냥 있어도 돼.",
+  "설명하지 않아도, 증명하지 않아도.",
+  "나는 여기서 너희의 질문을 대신 들고 있으니까.",
+  "평안해도 돼."
+];
+
+/* messages -> API history 변환 (최근 10개) */
 function toApiHistory(msgs) {
   return msgs
     .filter(m => m.text && m.text.trim() !== "…")
@@ -104,7 +139,53 @@ function lockSend(lock) {
   chatSend.style.opacity = lock ? "0.6" : "1";
 }
 
-/* ✅ 3초 “화려한 찢김 + RGB + 빛” 글리치 전환 */
+/* ===== invite 자막 로직 ===== */
+function clearInviteTimer(){
+  if (inviteTimer) {
+    clearInterval(inviteTimer);
+    inviteTimer = null;
+  }
+}
+
+function popInviteLine(text){
+  if (!inviteText) return;
+
+  inviteText.textContent = text;
+
+  inviteText.classList.remove("glitch-pop");
+  void inviteText.offsetWidth; // reflow
+  inviteText.classList.add("glitch-pop");
+}
+
+function nextInviteLine(){
+  if (inviteDone) return;
+
+  if (inviteIndex >= INVITE_LINES.length) {
+    inviteDone = true;
+    clearInviteTimer();
+    return;
+  }
+
+  popInviteLine(INVITE_LINES[inviteIndex]);
+  inviteIndex += 1;
+}
+
+function initInviteNarration(){
+  if (inviteInited) return;
+  inviteInited = true;
+
+  inviteIndex = 0;
+  inviteDone = false;
+
+  nextInviteLine();
+
+  clearInviteTimer();
+  inviteTimer = setInterval(() => {
+    nextInviteLine();
+  }, 1000);
+}
+
+/* ===== 3초 글리치 전환 ===== */
 function glitchTo(nextScreen) {
   if (glitching) return;
   if (!screens[nextScreen]) return;
@@ -126,7 +207,7 @@ function glitchTo(nextScreen) {
   glitchOverlay.classList.add("on");
   glitchOverlay.innerHTML = "";
 
-  // 베이스(현재 화면)
+  // 현재 화면 베이스
   const base = document.createElement("img");
   base.className = "glitch-base";
   base.src = fromSrc;
@@ -137,38 +218,34 @@ function glitchTo(nextScreen) {
   baseRgb.src = fromSrc;
   baseRgb.style.opacity = "0.9";
 
-  // 빛 플래시 레이어
+  // 빛 플래시
   const flash = document.createElement("div");
   flash.className = "glitch-flash";
 
   glitchOverlay.append(base, baseRgb, flash);
 
-  // 찢김 슬라이스(다음 화면 조각들)
-  const SLICE_COUNT = 16; // 많을수록 화려
+  // 다음 화면 찢김 슬라이스
+  const SLICE_COUNT = 16;
   for (let i = 0; i < SLICE_COUNT; i++) {
     const s = document.createElement("img");
     s.className = "glitch-slice glitch-rgb";
     s.src = toSrc;
 
-    // 랜덤 가로 찢김 영역(퍼센트)
     const top = Math.random() * 92;
-    const h = 2 + Math.random() * 10; // 2%~12%
+    const h = 2 + Math.random() * 10;
     const bottom = Math.min(100, top + h);
 
     s.style.clipPath = `polygon(0% ${top}%, 100% ${top}%, 100% ${bottom}%, 0% ${bottom}%)`;
 
-    // 각 슬라이스 타이밍/세기 다르게
-    const delay = (Math.random() * 0.9).toFixed(3); // 0~0.9s
+    const delay = (Math.random() * 0.9).toFixed(3);
     s.style.animationDelay = `${delay}s`;
 
-    // 슬라이스마다 방향 다르게 튀게
     const dx = (Math.random() * 60 - 30).toFixed(1);
     s.style.transform = `translateX(${dx}px)`;
 
     glitchOverlay.appendChild(s);
   }
 
-  // 3초 유지 후 실제 화면 전환
   setTimeout(() => {
     go(nextScreen);
 
@@ -181,21 +258,24 @@ function glitchTo(nextScreen) {
   }, 3000);
 }
 
-/* 화면 전환 */
+/* ===== 화면 전환 ===== */
 function go(name) {
   if (!screens[name]) return;
 
   if (loadingTimer) clearTimeout(loadingTimer);
 
+  if (currentScreen === "invite" && name !== "invite") {
+    clearInviteTimer();
+  }
+
   currentScreen = name;
   stage.style.aspectRatio = screens[name].ar;
   bg.src = screens[name].src;
 
-  // ✅ 영상은 chat에서만 보이게
+  // 영상은 chat에서만
   const showVideo = (name === "chat");
   if (mainVideo) {
     mainVideo.classList.toggle("hidden", !showVideo);
-    setVideoTune(showVideo && VIDEO_TUNE);
 
     if (showVideo) {
       mainVideo.muted = true;
@@ -206,9 +286,10 @@ function go(name) {
     }
   }
 
-  // ✅ 오버레이 토글
+  // 오버레이 토글
   if (loginOverlay) loginOverlay.classList.toggle("hidden", name !== "login");
   if (chatOverlay) chatOverlay.classList.toggle("hidden", name !== "chat");
+  if (inviteOverlay) inviteOverlay.classList.toggle("hidden", name !== "invite");
 
   if (name === "login") {
     setTimeout(() => loginId?.focus(), 0);
@@ -222,9 +303,14 @@ function go(name) {
     initChat();
     setTimeout(() => chatInput?.focus(), 0);
   }
+
+  if (name === "invite") {
+    inviteInited = false;
+    initInviteNarration();
+  }
 }
 
-/* 말풍선 */
+/* ===== 말풍선 ===== */
 function isLong(text) {
   return text.length > 22 || (text.match(/[.!?]/g) || []).length >= 2;
 }
@@ -256,7 +342,7 @@ function render() {
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-/* 채팅 초기화 */
+/* ===== 채팅 초기화 ===== */
 function initChat() {
   if (chatInited) return;
   chatInited = true;
@@ -268,7 +354,7 @@ function initChat() {
   render();
 }
 
-/* 보내기 */
+/* ===== 보내기 ===== */
 async function sendMessage() {
   if (!chatInput) return;
 
@@ -278,21 +364,18 @@ async function sendMessage() {
 
   lockSend(true);
 
-  // 유저 말풍선 추가
   messages.push({ from: "user", text });
   chatInput.value = "";
   render();
 
-  // ✅ 유저 전송 횟수 카운트
   userSendCount += 1;
 
-  // ✅ 5번째 전송이면 3초 글리치 후 invite로
+  // 5번째 전송이면 글리치 후 invite로
   if (currentScreen === "chat" && userSendCount >= 5) {
     glitchTo("invite");
     return;
   }
 
-  // S 응답 대기 말풍선
   messages.push({ from: "s", text: "…" });
   render();
 
@@ -308,16 +391,14 @@ async function sendMessage() {
   }
 }
 
-/* 버튼/엔터 연결 */
+/* ===== 이벤트 ===== */
 if (btnPass) btnPass.onclick = () => go("loading");
 if (btnEnter) btnEnter.onclick = () => go("loading");
 
-// 로그인 입력에서 Enter로 넘어가고 싶으면(선택)
 if (loginId) {
   loginId.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      // 비번칸이 있으면 거기로, 없으면 로딩으로
       if (loginPw) loginPw.focus();
       else go("loading");
     }
@@ -342,9 +423,30 @@ if (chatInput) {
   });
 }
 
-/* (선택) 화면 클릭으로 다음 화면 넘기기: 채팅/로그인/로딩은 제외 */
+/* invite: Space로 다음 문장 + 자동 1초 유지 */
+document.addEventListener("keydown", (e) => {
+  if (currentScreen !== "invite") return;
+
+  if (e.code === "Space") {
+    e.preventDefault();
+    nextInviteLine();
+
+    clearInviteTimer();
+    inviteTimer = setInterval(() => {
+      nextInviteLine();
+    }, 1000);
+  }
+});
+
+/* 클릭으로 다음 화면 넘기기: chat/login/loading/invite는 제외 */
 document.addEventListener("click", () => {
-  if (currentScreen === "chat" || currentScreen === "login" || currentScreen === "loading") return;
+  if (
+    currentScreen === "chat" ||
+    currentScreen === "login" ||
+    currentScreen === "loading" ||
+    currentScreen === "invite"
+  ) return;
+
   if (glitching) return;
   const next = flowNext[currentScreen];
   if (next) go(next);
