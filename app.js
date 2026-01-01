@@ -73,23 +73,24 @@ async function fetchSReply(userText, msgs) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      userText,
-      history: toApiHistory(msgs)
+      messages: msgs
+        .filter(m => m.text && m.text.trim() !== "")
+        .slice(-10)
+        .map(m => ({
+          role: m.from === "s" ? "assistant" : "user",
+          content: m.text
+        })),
+      userText
     })
   });
 
-  let data = {};
-  try { data = await res.json(); } catch { data = {}; }
-
   if (!res.ok) {
-    const msg = data?.error || data?.message || `API error (${res.status})`;
-    const err = new Error(msg);
-    err.status = res.status;
-    throw err;
+    const text = await res.text();
+    throw new Error(`API ${res.status}: ${text}`);
   }
 
-  const text = (data.text || data.reply || data.message || "").trim();
-  return text || "…";
+  const data = await res.json();
+  return data.reply || data.text || "…";
 }
 
 /* =========================
