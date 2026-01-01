@@ -1,4 +1,9 @@
+/* =========================
+   ✅ 너가 바꿀 곳(딱 1줄)
+   ========================= */
 const API_BASE = "https://s-chat-api.vercel.app"; // 끝에 / 붙이지 마
+
+/* 캐시 무효화 버전 */
 const V = "vFINAL";
 
 /* 화면/이미지 */
@@ -20,6 +25,7 @@ const flowNext = {
   invite: "login",
 };
 
+/* 말풍선 이미지 */
 const bubbles = {
   sShort: "./images/speech%20bubble%201.png",
   sLong:  "./images/speech%20bubble%202.png",
@@ -50,16 +56,21 @@ let chatInited = false;
 let messages = [];
 let sending = false;
 
-/* ✅ 튜닝 모드 ON/OFF (최종본 만들 땐 false로) */
+/* =========================
+   ✅ 영상 튜닝 모드
+   - true: 영상 보면서 드래그/휠로 좌표 맞추기
+   - false: 최종(영상만 깔끔)
+   ========================= */
 const VIDEO_TUNE = true;
 let videoTuneActive = VIDEO_TUNE;
 
 function setVideoTune(on){
   videoTuneActive = !!on;
-  stage.classList.toggle("tune", videoTuneActive);
+  if (stage) stage.classList.toggle("tune", videoTuneActive);
 }
 
-/* messages -> API history 변환 (최근 10개만) */
+/* messages -> API history 변환 (최근 10개만)
+   ✅ "…" 같은 임시 메시지는 히스토리에서 제외 */
 function toApiHistory(msgs) {
   return msgs
     .filter(m => m.text && m.text.trim() !== "…")
@@ -70,7 +81,7 @@ function toApiHistory(msgs) {
     }));
 }
 
-/* 서버로 보내서 S 답변 받기 */
+/* 서버(Vercel)로 보내서 S 답변 받기 */
 async function fetchSReply(userText, msgs) {
   const res = await fetch(`${API_BASE}/api/chat`, {
     method: "POST",
@@ -93,24 +104,33 @@ async function fetchSReply(userText, msgs) {
   return text || "…";
 }
 
-/* 화면 전환 */
+/* =========================
+   화면 전환
+   ========================= */
 function go(name) {
   if (!screens[name]) return;
 
   if (loadingTimer) clearTimeout(loadingTimer);
 
   currentScreen = name;
-  stage.style.aspectRatio = screens[name].ar;
-  bg.src = screens[name].src;
 
-  // ✅ 영상은 chat에서만 보여주기
+  if (stage) stage.style.aspectRatio = screens[name].ar;
+  if (bg) bg.src = screens[name].src;
+
+  // ✅ 메인 영상: chat 화면에서만 보이게 + 자동재생
   const showVideo = (name === "chat");
   if (mainVideo) {
     mainVideo.classList.toggle("hidden", !showVideo);
+
+    // 튜닝모드 토글(채팅 화면에서만)
     setVideoTune(showVideo && VIDEO_TUNE);
 
     if (showVideo) {
-      mainVideo.currentTime = 0;
+      // 혹시 HTML에 muted 안 달려있어도 강제 뮤트
+      mainVideo.muted = true;
+      mainVideo.playsInline = true;
+
+      // autoplay 시도
       const p = mainVideo.play();
       if (p && typeof p.catch === "function") p.catch(() => {});
     } else {
@@ -118,8 +138,8 @@ function go(name) {
     }
   }
 
-  loginOverlay.classList.toggle("hidden", name !== "login");
-  chatOverlay.classList.toggle("hidden", name !== "chat");
+  if (loginOverlay) loginOverlay.classList.toggle("hidden", name !== "login");
+  if (chatOverlay) chatOverlay.classList.toggle("hidden", name !== "chat");
 
   if (name === "login") setTimeout(() => loginId?.focus(), 0);
 
@@ -133,9 +153,15 @@ function go(name) {
   }
 }
 
-/* ✅ 영상 튜닝: 드래그(위치) + 휠(크기) + C(좌표 출력) */
+/* =========================
+   ✅ 영상 튜닝: 드래그/휠/단축키
+   - 드래그: 위치 이동
+   - 휠: 크기 조절 (Shift=가로만, Alt=세로만)
+   - T: 튜닝 토글
+   - C: 현재 좌표/크기 콘솔 출력
+   ========================= */
 (function setupVideoTuning(){
-  if (!mainVideo) return;
+  if (!mainVideo || !stage) return;
 
   let dragging = false;
   let startX = 0, startY = 0;
@@ -145,33 +171,25 @@ function go(name) {
     return Math.max(min, Math.min(max, n));
   }
 
-  function stageRect(){
+  function getStageRect(){
     return stage.getBoundingClientRect();
   }
 
+  function ensureInlineFromComputed(){
+    const cs = getComputedStyle(mainVideo);
+    if (!mainVideo.style.left) mainVideo.style.left = cs.left;
+    if (!mainVideo.style.top) mainVideo.style.top = cs.top;
+    if (!mainVideo.style.width) mainVideo.style.width = cs.width;
+    if (!mainVideo.style.height) mainVideo.style.height = cs.height;
+  }
+
   function pxToPctX(px){
-    const r = stageRect();
+    const r = getStageRect();
     return (px / r.width) * 100;
   }
   function pxToPctY(px){
-    const r = stageRect();
+    const r = getStageRect();
     return (px / r.height) * 100;
-  }
-
-  function readPosPct(){
-    const r = stageRect();
-    const cs = getComputedStyle(mainVideo);
-    const l = parseFloat(cs.left);
-    const t = parseFloat(cs.top);
-    return { lPct: (l / r.width) * 100, tPct: (t / r.height) * 100 };
-  }
-
-  function readSizePct(){
-    const r = stageRect();
-    const cs = getComputedStyle(mainVideo);
-    const w = parseFloat(cs.width);
-    const h = parseFloat(cs.height);
-    return { wPct: (w / r.width) * 100, hPct: (h / r.height) * 100 };
   }
 
   function setLeftTopPct(leftPct, topPct){
@@ -184,14 +202,33 @@ function go(name) {
     mainVideo.style.height = `${clamp(hPct, 1, 100).toFixed(2)}%`;
   }
 
+  function readSizePct(){
+    const r = getStageRect();
+    const cs = getComputedStyle(mainVideo);
+    const w = parseFloat(cs.width);
+    const h = parseFloat(cs.height);
+    return { wPct: (w / r.width) * 100, hPct: (h / r.height) * 100 };
+  }
+
+  function readPosPct(){
+    const r = getStageRect();
+    const cs = getComputedStyle(mainVideo);
+    const l = parseFloat(cs.left);
+    const t = parseFloat(cs.top);
+    return { lPct: (l / r.width) * 100, tPct: (t / r.height) * 100 };
+  }
+
   function logCss(){
     const { lPct, tPct } = readPosPct();
     const { wPct, hPct } = readSizePct();
-    console.log(`[main-video] left:${lPct.toFixed(2)}%; top:${tPct.toFixed(2)}%; width:${wPct.toFixed(2)}%; height:${hPct.toFixed(2)}%;`);
+    console.log(
+      `[main-video] left:${lPct.toFixed(2)}%; top:${tPct.toFixed(2)}%; width:${wPct.toFixed(2)}%; height:${hPct.toFixed(2)}%;`
+    );
   }
 
   mainVideo.addEventListener("pointerdown", (e) => {
     if (!videoTuneActive) return;
+    ensureInlineFromComputed();
 
     dragging = true;
     mainVideo.setPointerCapture(e.pointerId);
@@ -206,11 +243,12 @@ function go(name) {
 
   mainVideo.addEventListener("pointermove", (e) => {
     if (!dragging || !videoTuneActive) return;
-
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
 
-    setLeftTopPct(startLeft + pxToPctX(dx), startTop + pxToPctY(dy));
+    const leftPct = startLeft + pxToPctX(dx);
+    const topPct  = startTop  + pxToPctY(dy);
+    setLeftTopPct(leftPct, topPct);
   });
 
   mainVideo.addEventListener("pointerup", () => {
@@ -222,27 +260,36 @@ function go(name) {
   mainVideo.addEventListener("wheel", (e) => {
     if (!videoTuneActive) return;
     e.preventDefault();
+    ensureInlineFromComputed();
 
     const step = (e.deltaY > 0) ? -0.5 : 0.5; // 위로 굴리면 커짐
     const { wPct, hPct } = readSizePct();
 
-    if (e.shiftKey) setSizePct(wPct + step, hPct);     // 가로만
-    else if (e.altKey) setSizePct(wPct, hPct + step);  // 세로만
-    else setSizePct(wPct + step, hPct + step);         // 둘 다
+    let nextW = wPct;
+    let nextH = hPct;
 
+    if (e.shiftKey) nextW = wPct + step;         // 가로만
+    else if (e.altKey) nextH = hPct + step;      // 세로만
+    else { nextW = wPct + step; nextH = hPct + step; }
+
+    setSizePct(nextW, nextH);
     logCss();
   }, { passive: false });
 
   window.addEventListener("keydown", (e) => {
-    if ((e.key === "c" || e.key === "C") && videoTuneActive) logCss();
-    if ((e.key === "t" || e.key === "T") && VIDEO_TUNE) setVideoTune(!videoTuneActive);
+    if (!VIDEO_TUNE) return;
+    if (e.key === "t" || e.key === "T") setVideoTune(!videoTuneActive);
+    if (e.key === "c" || e.key === "C") logCss();
   });
 })();
 
 /* 로그인 버튼 */
-btnPass.onclick = btnEnter.onclick = () => go("loading");
+if (btnPass) btnPass.onclick = () => go("loading");
+if (btnEnter) btnEnter.onclick = () => go("loading");
 
-/* 말풍선 */
+/* =========================
+   말풍선 렌더
+   ========================= */
 function isLong(text) {
   return text.length > 22 || (text.match(/[.!?]/g) || []).length >= 2;
 }
@@ -267,27 +314,35 @@ function bubble(from, text) {
 }
 
 function render() {
+  if (!chatLog) return;
   chatLog.innerHTML = "";
   messages.forEach(m => chatLog.appendChild(bubble(m.from, m.text)));
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
+/* =========================
+   채팅 초기화 / 전송
+   ========================= */
 function initChat() {
   if (chatInited) return;
   chatInited = true;
+
   messages.push({ from: "s", text: "오~ 잘 왔어! 너무 보고 싶었어~" });
   render();
 }
 
 function lockSend(lock) {
   sending = lock;
+  if (!chatSend) return;
   chatSend.disabled = lock;
   chatSend.style.opacity = lock ? "0.6" : "1";
 }
 
 async function sendMessage() {
+  if (!chatInput) return;
   const text = chatInput.value.trim();
-  if (!text || sending) return;
+  if (!text) return;
+  if (sending) return;
 
   lockSend(true);
 
@@ -310,19 +365,22 @@ async function sendMessage() {
   }
 }
 
-chatSend.onclick = sendMessage;
-chatInput.onkeydown = (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    sendMessage();
-  }
-};
+if (chatSend) chatSend.onclick = sendMessage;
+if (chatInput) {
+  chatInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+}
 
-/* 클릭으로 다음 화면 (기존 로직 유지) */
-document.onclick = () => {
+/* 클릭으로 다음 화면 */
+document.addEventListener("click", () => {
   if (currentScreen === "chat" || currentScreen === "login" || currentScreen === "loading") return;
-  go(flowNext[currentScreen]);
-};
+  const next = flowNext[currentScreen];
+  if (next) go(next);
+});
 
 /* 시작 */
 go("login");
