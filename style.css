@@ -40,6 +40,7 @@ body {
   inset: 0;
   pointer-events: none;
 }
+
 .login-input,
 .login-btn-pass,
 .login-btn-enter { pointer-events: auto; }
@@ -273,9 +274,9 @@ body {
 .invite-text{
   position: absolute;
 
-  /* 06_invite 하단 박스 대략 좌표 (필요하면 여기만 조정) */
+  /* ✅ 문장 위치 살짝 위로 */
   left: 3.2%;
-  top: 86.0%;
+  top: 84.8%;
   width: 93.6%;
   height: 11.5%;
 
@@ -300,11 +301,12 @@ body {
   line-height: 1.25;
 }
 
+/* ✅ RGB → 금색 지지직(골드 글로우) */
 .invite-text.glitch-pop{
   animation: inviteGlitchPop 0.35s steps(2, end) both;
   filter:
-    drop-shadow(-2px 0 rgba(255,0,120,0.45))
-    drop-shadow( 2px 0 rgba(0,255,255,0.35))
+    drop-shadow(0 0 6px rgba(255, 214, 120, 0.55))
+    drop-shadow(0 0 12px rgba(255, 180, 60, 0.35))
     contrast(1.05);
 }
 
