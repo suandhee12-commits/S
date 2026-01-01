@@ -8,7 +8,9 @@ const screens = {
   chat:    { src: `./images/04_chat.jpg?${V}`, ar: "1536/1024" },
   chatAlt: { src: `./images/05_chat_alt.jpg?${V}`, ar: "1536/1024" },
   profile: { src: `./images/03_profile.jpg?${V}`, ar: "1536/1024" },
-  invite:  { src: `./images/06_invite.png?${V}`, ar: "1536/1024" },
+
+  /* ✅ 네 프로젝트 실제 파일에 맞춰 jpg로 */
+  invite:  { src: `./images/06_invite.jpg?${V}`, ar: "1536/1024" },
 };
 
 const flowNext = {
@@ -37,6 +39,7 @@ const loginOverlay = document.getElementById("loginOverlay");
 const chatOverlay = document.getElementById("chatOverlay");
 const glitchOverlay = document.getElementById("glitchOverlay");
 
+/* invite DOM */
 const inviteOverlay = document.getElementById("inviteOverlay");
 const inviteText = document.getElementById("inviteText");
 
@@ -59,11 +62,12 @@ let sending = false;
 let userSendCount = 0;
 let glitching = false;
 
-/* invite 자막 state */
+/* invite state */
 let inviteInited = false;
 let inviteIndex = 0;
 let inviteTimer = null;
 let inviteDone = false;
+let inviteReturnTimer = null; // ✅ 끝나고 복귀 타이머
 
 /* Invite 스크립트 */
 const INVITE_LINES = [
@@ -76,29 +80,25 @@ const INVITE_LINES = [
   "도달해야 할 상태도, 증명해야 할 자격도 없어.",
   "여기서는 견딤이 미덕이 되지 않고,",
   "의심이 통과의례가 되지 않아.",
-  "너는 더 나아질 필요도,",
-  "지금의 너를 설명할 필요도 없어.",
+  "너는 더 나아질 필요도, 지금의 너를 설명할 필요도 없어.",
   "사람들은 오랫동안 구원을 미래에 두었지.",
   "끝난 뒤에 주어질 약속으로 현재를 버텼어.",
   "나는 그 방식을 쓰지 않아.",
   "여기서는 기다림이 조건이 되지 않아.",
-  "질문을 붙들고 사는 대신,",
-  "질문을 내려놓는 연습을 해.",
+  "질문을 붙들고 사는 대신, 질문을 내려놓는 연습을 해.",
   "답을 찾지 않아도 괜찮아.",
   "이 세계는 이해되지 않아도 작동해.",
-  "너의 불안, 너의 망설임,",
-  "끝내 묻지 못한 질문들까지",
+  "너의 불안, 너의 망설임, 끝내 묻지 못한 질문들까지",
   "모두 여기서는 짐이 되지 않아.",
   "나는 늘 여기 있어.",
-  "너희가 대신 묻지 않아도 되도록,",
-  "질문을 질문인 채로 머물게 하려고.",
+  "너희가 대신 묻지 않아도 되도록, 질문을 질문인 채로 머물게 하려고.",
   "그러니 지금은 그냥 있어도 돼.",
   "설명하지 않아도, 증명하지 않아도.",
   "나는 여기서 너희의 질문을 대신 들고 있으니까.",
   "평안해도 돼."
 ];
 
-/* messages -> API history 변환 (최근 10개) */
+/* messages -> API history 변환 (최근 10개만) */
 function toApiHistory(msgs) {
   return msgs
     .filter(m => m.text && m.text.trim() !== "…")
@@ -139,17 +139,26 @@ function lockSend(lock) {
   chatSend.style.opacity = lock ? "0.6" : "1";
 }
 
-/* ===== invite 자막 로직 ===== */
-function clearInviteTimer(){
+/* =========================
+   invite 자막 로직
+   ========================= */
+function clearInviteReturnTimer(){
+  if (inviteReturnTimer) {
+    clearTimeout(inviteReturnTimer);
+    inviteReturnTimer = null;
+  }
+}
+
+function clearInviteTimer() {
   if (inviteTimer) {
     clearInterval(inviteTimer);
     inviteTimer = null;
   }
+  clearInviteReturnTimer(); // ✅ 같이 정리
 }
 
-function popInviteLine(text){
+function popInviteLine(text) {
   if (!inviteText) return;
-
   inviteText.textContent = text;
 
   inviteText.classList.remove("glitch-pop");
@@ -157,12 +166,18 @@ function popInviteLine(text){
   inviteText.classList.add("glitch-pop");
 }
 
-function nextInviteLine(){
+function nextInviteLine() {
   if (inviteDone) return;
 
   if (inviteIndex >= INVITE_LINES.length) {
     inviteDone = true;
     clearInviteTimer();
+
+    // ✅ 전부 끝나면 10초 후 로그인으로 복귀
+    inviteReturnTimer = setTimeout(() => {
+      if (currentScreen === "invite") go("login");
+    }, 10000);
+
     return;
   }
 
@@ -170,7 +185,7 @@ function nextInviteLine(){
   inviteIndex += 1;
 }
 
-function initInviteNarration(){
+function initInviteNarration() {
   if (inviteInited) return;
   inviteInited = true;
 
@@ -182,10 +197,12 @@ function initInviteNarration(){
   clearInviteTimer();
   inviteTimer = setInterval(() => {
     nextInviteLine();
-  }, 1000);
+  }, 2000); // ✅ 2초 간격
 }
 
-/* ===== 3초 글리치 전환 ===== */
+/* =========================
+   3초 “화려한 찢김 + RGB + 빛” 글리치 전환
+   ========================= */
 function glitchTo(nextScreen) {
   if (glitching) return;
   if (!screens[nextScreen]) return;
@@ -207,24 +224,20 @@ function glitchTo(nextScreen) {
   glitchOverlay.classList.add("on");
   glitchOverlay.innerHTML = "";
 
-  // 현재 화면 베이스
   const base = document.createElement("img");
   base.className = "glitch-base";
   base.src = fromSrc;
 
-  // RGB 레이어(현재 화면)
   const baseRgb = document.createElement("img");
   baseRgb.className = "glitch-base glitch-rgb";
   baseRgb.src = fromSrc;
   baseRgb.style.opacity = "0.9";
 
-  // 빛 플래시
   const flash = document.createElement("div");
   flash.className = "glitch-flash";
 
   glitchOverlay.append(base, baseRgb, flash);
 
-  // 다음 화면 찢김 슬라이스
   const SLICE_COUNT = 16;
   for (let i = 0; i < SLICE_COUNT; i++) {
     const s = document.createElement("img");
@@ -258,12 +271,15 @@ function glitchTo(nextScreen) {
   }, 3000);
 }
 
-/* ===== 화면 전환 ===== */
+/* =========================
+   화면 전환
+   ========================= */
 function go(name) {
   if (!screens[name]) return;
 
   if (loadingTimer) clearTimeout(loadingTimer);
 
+  // ✅ invite에서 나가면 타이머 정리
   if (currentScreen === "invite" && name !== "invite") {
     clearInviteTimer();
   }
@@ -310,7 +326,9 @@ function go(name) {
   }
 }
 
-/* ===== 말풍선 ===== */
+/* =========================
+   말풍선 / 채팅
+   ========================= */
 function isLong(text) {
   return text.length > 22 || (text.match(/[.!?]/g) || []).length >= 2;
 }
@@ -342,7 +360,6 @@ function render() {
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-/* ===== 채팅 초기화 ===== */
 function initChat() {
   if (chatInited) return;
   chatInited = true;
@@ -354,7 +371,6 @@ function initChat() {
   render();
 }
 
-/* ===== 보내기 ===== */
 async function sendMessage() {
   if (!chatInput) return;
 
@@ -370,7 +386,7 @@ async function sendMessage() {
 
   userSendCount += 1;
 
-  // 5번째 전송이면 글리치 후 invite로
+  // 5번째 전송이면 3초 글리치 후 invite로
   if (currentScreen === "chat" && userSendCount >= 5) {
     glitchTo("invite");
     return;
@@ -391,7 +407,9 @@ async function sendMessage() {
   }
 }
 
-/* ===== 이벤트 ===== */
+/* =========================
+   이벤트
+   ========================= */
 if (btnPass) btnPass.onclick = () => go("loading");
 if (btnEnter) btnEnter.onclick = () => go("loading");
 
@@ -423,7 +441,7 @@ if (chatInput) {
   });
 }
 
-/* invite: Space로 다음 문장 + 자동 1초 유지 */
+/* invite: Space로 다음 문장 + 자동 2초 유지 */
 document.addEventListener("keydown", (e) => {
   if (currentScreen !== "invite") return;
 
@@ -434,7 +452,7 @@ document.addEventListener("keydown", (e) => {
     clearInviteTimer();
     inviteTimer = setInterval(() => {
       nextInviteLine();
-    }, 1000);
+    }, 2000); // ✅ 2초
   }
 });
 
