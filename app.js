@@ -8,8 +8,6 @@ const screens = {
   chat:    { src: `./images/04_chat.jpg?${V}`, ar: "1536/1024" },
   chatAlt: { src: `./images/05_chat_alt.jpg?${V}`, ar: "1536/1024" },
   profile: { src: `./images/03_profile.jpg?${V}`, ar: "1536/1024" },
-
-  /* ✅ 네 프로젝트 실제 파일에 맞춰 jpg로 */
   invite:  { src: `./images/06_invite.jpg?${V}`, ar: "1536/1024" },
 };
 
@@ -22,7 +20,7 @@ const flowNext = {
   invite: "login",
 };
 
-/* 말풍선 이미지 */
+/* 말풍선 이미지 (파일명이 "speech bubble 1.png" 같은 형태라 %20 유지가 맞음) */
 const bubbles = {
   sShort: "./images/speech%20bubble%201.png",
   sLong:  "./images/speech%20bubble%202.png",
@@ -39,7 +37,6 @@ const loginOverlay = document.getElementById("loginOverlay");
 const chatOverlay = document.getElementById("chatOverlay");
 const glitchOverlay = document.getElementById("glitchOverlay");
 
-/* invite DOM */
 const inviteOverlay = document.getElementById("inviteOverlay");
 const inviteText = document.getElementById("inviteText");
 
@@ -67,7 +64,7 @@ let inviteInited = false;
 let inviteIndex = 0;
 let inviteTimer = null;
 let inviteDone = false;
-let inviteReturnTimer = null; // ✅ 끝나고 복귀 타이머
+let inviteReturnTimer = null;
 
 /* Invite 스크립트 */
 const INVITE_LINES = [
@@ -154,7 +151,7 @@ function clearInviteTimer() {
     clearInterval(inviteTimer);
     inviteTimer = null;
   }
-  clearInviteReturnTimer(); // ✅ 같이 정리
+  clearInviteReturnTimer();
 }
 
 function popInviteLine(text) {
@@ -201,7 +198,7 @@ function initInviteNarration() {
 }
 
 /* =========================
-   3초 “화려한 찢김 + RGB + 빛” 글리치 전환
+   3초 글리치 전환
    ========================= */
 function glitchTo(nextScreen) {
   if (glitching) return;
@@ -307,9 +304,7 @@ function go(name) {
   if (chatOverlay) chatOverlay.classList.toggle("hidden", name !== "chat");
   if (inviteOverlay) inviteOverlay.classList.toggle("hidden", name !== "invite");
 
-  if (name === "login") {
-    setTimeout(() => loginId?.focus(), 0);
-  }
+  if (name === "login") setTimeout(() => loginId?.focus(), 0);
 
   if (name === "loading") {
     loadingTimer = setTimeout(() => go("chat"), 1000);
@@ -417,8 +412,7 @@ if (loginId) {
   loginId.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      if (loginPw) loginPw.focus();
-      else go("loading");
+      (loginPw ? loginPw.focus() : go("loading"));
     }
   });
 }
@@ -441,7 +435,7 @@ if (chatInput) {
   });
 }
 
-/* invite: Space로 다음 문장 + 자동 2초 유지 */
+/* ✅ invite: Space로 다음 문장 + 자동 2초 유지 */
 document.addEventListener("keydown", (e) => {
   if (currentScreen !== "invite") return;
 
@@ -452,7 +446,7 @@ document.addEventListener("keydown", (e) => {
     clearInviteTimer();
     inviteTimer = setInterval(() => {
       nextInviteLine();
-    }, 2000); // ✅ 2초
+    }, 2000);
   }
 });
 
