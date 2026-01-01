@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <title>동반자 S</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="./style.css" />
 </head>
@@ -14,11 +13,10 @@
     <!-- 배경(화면) -->
     <img id="bg" class="bg" src="./images/01_login.jpg" alt="screen" />
 
-    <!-- ✅ 지직(글리치+RGB) 전환 오버레이 -->
+    <!-- ✅ 지직(글리치+RGB+찢김) 전환 오버레이 -->
     <div id="glitchOverlay" class="glitch-overlay hidden" aria-hidden="true"></div>
 
     <!-- ✅ 채팅 화면(메인) 왼쪽 위 영상 -->
-    <!-- src는 프로젝트에 있는 영상 경로로 바꿔줘도 됨 -->
     <video
       id="mainVideo"
       class="main-video hidden"
@@ -27,14 +25,16 @@
       loop
       playsinline
       preload="auto"
-    >
-      <!-- 예시: 필요하면 아래 주석 해제 후 경로 수정 -->
-      <!-- <source src="./videos/main.mp4" type="video/mp4" /> -->
-    </video>
+    ></video>
 
     <!-- 로그인 -->
     <div id="loginOverlay" class="login-overlay">
-      <input id="loginId" class="login-id" type="text" autocomplete="off" />
+      <!-- ✅ CSS가 기대하는 login-input + login-id -->
+      <input id="loginId" class="login-input login-id" type="text" autocomplete="off" />
+
+      <!-- ✅ 비번칸 원복 -->
+      <input id="loginPw" class="login-input login-pw" type="password" autocomplete="off" />
+
       <button id="btnPass" class="hotspot login-btn-pass" aria-label="비밀번호"></button>
       <button id="btnEnter" class="hotspot login-btn-enter" aria-label="입장"></button>
     </div>
