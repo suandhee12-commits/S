@@ -208,23 +208,25 @@ body {
 }
 
 /* =========================
-   메인(채팅) 왼쪽 위 영상
+   메인(채팅) 왼쪽 위 영상 - 최종 고정본
    ========================= */
 .main-video{
   position: absolute;
 
-  /* 초기값 (콘솔 값으로 나중에 교체) */
-  left: 2.5%;
-  top: 3.0%;
-  width: 18%;
-  height: 16%;
+  /* ✅ 확정 좌표 */
+  left: 1.50%;
+  top: 13.36%;
+  width: 45.98%;
+  height: 43.99%;
 
-  object-fit: contain;     /* ❗ 안 잘리게 */
-  background: #000;        /* 여백 자연스럽게 */
+  /* ✅ 영상 안 잘림 + 검은 여백 투명 */
+  object-fit: contain;
+  background: transparent;
 
   border-radius: 10px;
   z-index: 10;
 
+  /* 최종본: 조작 막기 */
   pointer-events: none;
 }
 
