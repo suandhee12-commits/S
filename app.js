@@ -20,7 +20,7 @@ const flowNext = {
   invite: "login",
 };
 
-/* 말풍선 이미지 (파일명이 "speech bubble 1.png" 같은 형태라 %20 유지가 맞음) */
+/* 말풍선 이미지 */
 const bubbles = {
   sShort: "./images/speech%20bubble%201.png",
   sLong:  "./images/speech%20bubble%202.png",
@@ -95,7 +95,7 @@ const INVITE_LINES = [
   "평안해도 돼."
 ];
 
-/* messages -> API history 변환 (최근 10개만) */
+/* messages -> API history 변환 */
 function toApiHistory(msgs) {
   return msgs
     .filter(m => m.text && m.text.trim() !== "…")
@@ -159,8 +159,18 @@ function popInviteLine(text) {
   inviteText.textContent = text;
 
   inviteText.classList.remove("glitch-pop");
-  void inviteText.offsetWidth; // reflow
+  void inviteText.offsetWidth;
   inviteText.classList.add("glitch-pop");
+}
+
+function scheduleHardReset() {
+  // 중복 방지
+  clearInviteTimer();
+
+  // ✅ 5초 후 새로고침(완전 리셋)
+  inviteReturnTimer = setTimeout(() => {
+    location.reload(); // 아이디/비번/채팅/상태 전부 초기화
+  }, 5000);
 }
 
 function nextInviteLine() {
@@ -168,13 +178,7 @@ function nextInviteLine() {
 
   if (inviteIndex >= INVITE_LINES.length) {
     inviteDone = true;
-    clearInviteTimer();
-
-    // ✅ 전부 끝나면 10초 후 로그인으로 복귀
-    inviteReturnTimer = setTimeout(() => {
-      if (currentScreen === "invite") go("login");
-    }, 10000);
-
+    scheduleHardReset();
     return;
   }
 
@@ -194,7 +198,7 @@ function initInviteNarration() {
   clearInviteTimer();
   inviteTimer = setInterval(() => {
     nextInviteLine();
-  }, 2000); // ✅ 2초 간격
+  }, 2000); // 2초 간격
 }
 
 /* =========================
@@ -276,7 +280,7 @@ function go(name) {
 
   if (loadingTimer) clearTimeout(loadingTimer);
 
-  // ✅ invite에서 나가면 타이머 정리
+  // invite에서 나가면 타이머 정리
   if (currentScreen === "invite" && name !== "invite") {
     clearInviteTimer();
   }
@@ -362,6 +366,7 @@ function initChat() {
   userSendCount = 0;
   glitching = false;
 
+  messages = [];
   messages.push({ from: "s", text: "오~ 잘 왔어! 너무 보고 싶었어~" });
   render();
 }
@@ -435,7 +440,7 @@ if (chatInput) {
   });
 }
 
-/* ✅ invite: Space로 다음 문장 + 자동 2초 유지 */
+/* invite: Space로 다음 문장 + 자동 2초 유지 */
 document.addEventListener("keydown", (e) => {
   if (currentScreen !== "invite") return;
 
@@ -443,6 +448,7 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     nextInviteLine();
 
+    // 스페이스로 넘겨도 자동 2초 리듬 유지
     clearInviteTimer();
     inviteTimer = setInterval(() => {
       nextInviteLine();
