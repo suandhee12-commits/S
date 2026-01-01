@@ -20,7 +20,7 @@ const flowNext = {
   invite: "login",
 };
 
-/* 말풍선 이미지 */
+/* 말풍선 이미지 (공백 파일명이라 %20 필요) */
 const bubbles = {
   sShort: "./images/speech%20bubble%201.png",
   sLong:  "./images/speech%20bubble%202.png",
@@ -52,6 +52,7 @@ const chatSend = document.getElementById("chatSend");
 /* state */
 let currentScreen = "login";
 let loadingTimer = null;
+
 let chatInited = false;
 let messages = [];
 let sending = false;
@@ -62,9 +63,9 @@ let glitching = false;
 /* invite state */
 let inviteInited = false;
 let inviteIndex = 0;
-let inviteTimer = null;
+let inviteTimer = null;        // 자동 넘김 interval
 let inviteDone = false;
-let inviteReturnTimer = null;
+let inviteReturnTimer = null;  // 리셋 timeout
 
 /* Invite 스크립트 */
 const INVITE_LINES = [
@@ -95,7 +96,7 @@ const INVITE_LINES = [
   "평안해도 돼."
 ];
 
-/* messages -> API history 변환 */
+/* messages -> API history 변환 (최근 10개만) */
 function toApiHistory(msgs) {
   return msgs
     .filter(m => m.text && m.text.trim() !== "…")
@@ -137,7 +138,7 @@ function lockSend(lock) {
 }
 
 /* =========================
-   invite 자막 로직
+   invite 타이머 정리
    ========================= */
 function clearInviteReturnTimer(){
   if (inviteReturnTimer) {
@@ -146,30 +147,39 @@ function clearInviteReturnTimer(){
   }
 }
 
+// ✅ 자동 넘김 interval만 끔 (리셋 타이머는 절대 건드리지 않음)
 function clearInviteTimer() {
   if (inviteTimer) {
     clearInterval(inviteTimer);
     inviteTimer = null;
   }
+}
+
+// ✅ 필요할 때만 전부 정리
+function clearInviteAllTimers() {
+  clearInviteTimer();
   clearInviteReturnTimer();
 }
 
+/* =========================
+   invite 자막
+   ========================= */
 function popInviteLine(text) {
   if (!inviteText) return;
   inviteText.textContent = text;
 
   inviteText.classList.remove("glitch-pop");
-  void inviteText.offsetWidth;
+  void inviteText.offsetWidth; // reflow
   inviteText.classList.add("glitch-pop");
 }
 
 function scheduleHardReset() {
-  // 중복 방지
+  // interval만 끄고(자동 넘김 중단), 리셋은 5초 후
   clearInviteTimer();
+  clearInviteReturnTimer(); // 혹시 중복 예약 방지
 
-  // ✅ 5초 후 새로고침(완전 리셋)
   inviteReturnTimer = setTimeout(() => {
-    location.reload(); // 아이디/비번/채팅/상태 전부 초기화
+    location.reload(); // ✅ 완전 리셋(아이디/비번/채팅/상태 전부 초기화)
   }, 5000);
 }
 
@@ -184,6 +194,8 @@ function nextInviteLine() {
 
   popInviteLine(INVITE_LINES[inviteIndex]);
   inviteIndex += 1;
+
+  // 방금 출력이 "마지막 줄"이었다면, 다음 tick에서 끝 처리되므로 여기선 아무 것도 안 함
 }
 
 function initInviteNarration() {
@@ -198,7 +210,7 @@ function initInviteNarration() {
   clearInviteTimer();
   inviteTimer = setInterval(() => {
     nextInviteLine();
-  }, 2000); // 2초 간격
+  }, 2000); // ✅ 2초 간격
 }
 
 /* =========================
@@ -280,9 +292,9 @@ function go(name) {
 
   if (loadingTimer) clearTimeout(loadingTimer);
 
-  // invite에서 나가면 타이머 정리
+  // ✅ invite에서 다른 화면으로 이동하면 타이머 전부 정리
   if (currentScreen === "invite" && name !== "invite") {
-    clearInviteTimer();
+    clearInviteAllTimers();
   }
 
   currentScreen = name;
@@ -360,7 +372,7 @@ function render() {
 }
 
 function initChat() {
-  if (chatInited) return;
+  // chat 재진입을 고려해 리셋 가능하게 유지
   chatInited = true;
 
   userSendCount = 0;
@@ -440,20 +452,26 @@ if (chatInput) {
   });
 }
 
-/* invite: Space로 다음 문장 + 자동 2초 유지 */
+/* ✅ invite: Space로 다음 문장 + 자동 2초 유지 (끝나면 리셋 예약 유지) */
 document.addEventListener("keydown", (e) => {
   if (currentScreen !== "invite") return;
+  if (e.code !== "Space") return;
 
-  if (e.code === "Space") {
-    e.preventDefault();
+  e.preventDefault();
+
+  // 이미 끝났으면 아무 것도 안 함
+  if (inviteDone) return;
+
+  nextInviteLine();
+
+  // nextInviteLine에서 끝 처리(=리셋 예약)됐으면 interval 재시작 금지
+  if (inviteDone) return;
+
+  // 스페이스로 넘겨도 자동 리듬 유지
+  clearInviteTimer();
+  inviteTimer = setInterval(() => {
     nextInviteLine();
-
-    // 스페이스로 넘겨도 자동 2초 리듬 유지
-    clearInviteTimer();
-    inviteTimer = setInterval(() => {
-      nextInviteLine();
-    }, 2000);
-  }
+  }, 2000);
 });
 
 /* 클릭으로 다음 화면 넘기기: chat/login/loading/invite는 제외 */
