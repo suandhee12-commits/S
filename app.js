@@ -35,6 +35,7 @@ const mainVideo = document.getElementById("mainVideo");
 
 const loginOverlay = document.getElementById("loginOverlay");
 const chatOverlay = document.getElementById("chatOverlay");
+const glitchOverlay = document.getElementById("glitchOverlay"); // ✅ 글리치 전환 오버레이
 
 const loginId = document.getElementById("loginId");
 const btnPass = document.getElementById("btnPass");
@@ -50,6 +51,10 @@ let loadingTimer = null;
 let chatInited = false;
 let messages = [];
 let sending = false;
+
+// ✅ 채팅 전송 카운트 & 글리치 상태
+let userSendCount = 0;
+let glitching = false;
 
 /* ✅ 최종본: 튜닝 OFF */
 const VIDEO_TUNE = false;
@@ -89,6 +94,67 @@ async function fetchSReply(userText, msgs) {
 
   const text = (data.text || data.reply || data.message || "").trim();
   return text || "…";
+}
+
+/* ✅ 글리치(지직) 전환 → 실제 화면 전환 */
+function glitchTo(nextScreen) {
+  if (glitching) return;
+  if (!screens[nextScreen]) return;
+
+  glitching = true;
+  lockSend(true);
+
+  // 오버레이가 없으면 그냥 전환
+  if (!glitchOverlay || !bg) {
+    go(nextScreen);
+    glitching = false;
+    lockSend(false);
+    return;
+  }
+
+  const fromSrc = bg.currentSrc || bg.src;
+  const toSrc = screens[nextScreen].src;
+
+  // 오버레이 구성
+  glitchOverlay.classList.remove("hidden");
+  glitchOverlay.classList.add("on");
+  glitchOverlay.innerHTML = "";
+
+  // 현재 화면(기본)
+  const a = document.createElement("img");
+  a.className = "glitch-layer";
+  a.src = fromSrc;
+
+  // 현재 화면(RGB 분리)
+  const aRgb = document.createElement("img");
+  aRgb.className = "glitch-layer rgb";
+  aRgb.src = fromSrc;
+  aRgb.style.opacity = "0.85";
+
+  // 다음 화면(RGB 분리, 중간에 번쩍)
+  const bRgb = document.createElement("img");
+  bRgb.className = "glitch-layer rgb";
+  bRgb.src = toSrc;
+  bRgb.style.opacity = "0";
+
+  glitchOverlay.append(a, aRgb, bRgb);
+
+  // 다음 화면이 지직 사이로 잠깐 보이게 (TV 느낌)
+  setTimeout(() => { bRgb.style.opacity = "0.9"; }, 140);
+  setTimeout(() => { bRgb.style.opacity = "0.2"; }, 240);
+  setTimeout(() => { bRgb.style.opacity = "1.0"; }, 320);
+
+  // 마무리: 실제 전환 + 오버레이 정리
+  setTimeout(() => {
+    go(nextScreen);
+
+    glitchOverlay.classList.remove("on");
+    glitchOverlay.classList.add("hidden");
+    glitchOverlay.innerHTML = "";
+
+    glitching = false;
+    lockSend(false);
+  }, 450);
 }
 
 /* 화면 전환 */
@@ -169,6 +235,10 @@ function initChat() {
   if (chatInited) return;
   chatInited = true;
 
+  // ✅ chat 첫 진입 시 카운트 초기화
+  userSendCount = 0;
+  glitching = false;
+
   messages.push({ from: "s", text: "오~ 잘 왔어! 너무 보고 싶었어~" });
   render();
 }
@@ -185,7 +255,7 @@ async function sendMessage() {
 
   const text = chatInput.value.trim();
   if (!text) return;
-  if (sending) return;
+  if (sending || glitching) return;
 
   lockSend(true);
 
@@ -193,6 +263,15 @@ async function sendMessage() {
   messages.push({ from: "user", text });
   chatInput.value = "";
   render();
+
+  // ✅ 유저 전송 횟수 카운트
+  userSendCount += 1;
+
+  // ✅ 5번째 전송이면 지직(글리치+RGB) 후 invite로
+  if (currentScreen === "chat" && userSendCount >= 5) {
+    glitchTo("invite");
+    return;
+  }
 
   // S 응답 대기 말풍선
   messages.push({ from: "s", text: "…" });
