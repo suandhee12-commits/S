@@ -43,7 +43,7 @@ let loadingTimer = null;
 /* =========================
    영상 튜닝 모드
    ========================= */
-const VIDEO_TUNE = true;
+const VIDEO_TUNE = false;
 let tuneOn = VIDEO_TUNE;
 
 function setTune(on){
