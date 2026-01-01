@@ -187,3 +187,22 @@ body {
   outline: 2px solid rgba(0,160,255,0.85);
   outline-offset: 2px;
 }
+
+.main-video{
+  position: absolute;
+  left: 2.5%;
+  top: 3.0%;
+  width: 18%;
+  height: 16%;
+  object-fit: cover;
+  border-radius: 10px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.stage.tune .main-video{
+  pointer-events: auto;
+  cursor: move;
+  outline: 2px solid rgba(0,160,255,0.85);
+  outline-offset: 2px;
+}
